@@ -1,5 +1,41 @@
 import React, { useState } from "react";
 import './App.css';
+import WorldMap from './components/figma/WorldMap';
+
+function App() {
+  return (
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      {/* Map as interactive background */}
+      <WorldMap className="map-background" />
+      {/* UI overlays */}
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 10 }}>
+        {/* TopBar */}
+        <div style={{ pointerEvents: 'auto', position: 'absolute', top: 0, left: 0, right: 0 }}>
+          <TopBar />
+        </div>
+        {/* Sidebar */}
+        <div style={{ pointerEvents: 'auto', position: 'absolute', top: 56, left: 0, bottom: 0 }}>
+          <Sidebar />
+        </div>
+        {/* FiltersBar */}
+        <div style={{ pointerEvents: 'auto', position: 'absolute', top: 56, left: 58, right: 0 }}>
+          <FiltersBar />
+        </div>
+        {/* ResultsPanel */}
+        <div style={{ pointerEvents: 'auto', position: 'absolute', top: 120, right: 0, bottom: 0 }}>
+          <ResultsPanel />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+export default App;
+
 
 function TopBar() {
   return (
@@ -23,7 +59,6 @@ function Sidebar() {
     </nav>
   );
 }
-
 
 function FiltersBar() {
   const [minRange, setMinRange] = useState(4000);
@@ -96,16 +131,6 @@ function FiltersBar() {
   );
 }
 
-function MapSection() {
-  return (
-    <div className="map-section">
-      <div className="map-section__map">
-        {/* Placeholder for map */}
-        <div className="map-section__placeholder">[Map Here]</div>
-      </div>
-    </div>
-  );
-}
 
 function ResultsPanel() {
   return (
@@ -136,22 +161,3 @@ function ResultsPanel() {
   );
 }
 
-function App() {
-  return (
-    <div className="app-container">
-      <TopBar />
-      <div className="main-layout">
-        <Sidebar />
-        <div className="content-area">
-          <FiltersBar />
-          <div className="main-content">
-            <MapSection />
-            <ResultsPanel />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default App;

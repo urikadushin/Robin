@@ -54,9 +54,11 @@ const MapSection_ResultsSection: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'row', gap: '29px', minHeight: '701px', width: '100%' }}>
       <div style={{ flex: 1, position: 'relative', minWidth: '600px' }}>
         <div style={{ width: '100%', height: '100%', borderRadius: '8px', backgroundColor: '#fff', overflow: 'hidden' }}>
-          {/* Map Background */}
-          <div style={{ width: '100%', height: '100%', backgroundColor: '#ebedf0' }} />
-          
+          <iframe src="https://map.proxi.co/r/Rko1A-RQvdSmSHS1GF_1" allow="geolocation; clipboard-write" width="100%" height="625px" style={{ borderWidth: 0 }} allowFullScreen></iframe>
+<div style={{fontFamily: 'Sans-Serif', fontSize: '12px', color: '#000000', opacity: 0.5, paddingTop: '5px'}}>
+  powered by <a href="https://www.proxi.co/?utm_source=poweredbyproxi" style={{color:'#000000'}} target="_blank" rel="noopener noreferrer">Proxi</a>
+</div>
+
           {/* Map Controls */}
           <div style={{ 
             position: 'absolute',
