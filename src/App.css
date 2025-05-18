@@ -14,6 +14,19 @@ body {
   /* pointer-events intentionally omitted to allow map interaction */
 }
 
+.map-background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: rgba(255,255,255,0.3); /* 30% white overlay for brightness */
+  z-index: 10;
+}
+
+
 .app-container, .top-bar, .sidebar, .filters-bar, .results-panel, .main-content, .content-area {
   position: relative;
   z-index: 10;
