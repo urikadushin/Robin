@@ -15,7 +15,7 @@ function App() {
   return (
     <div className={darkMode ? 'dark-mode' : ''} style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       {/* Map as interactive background */}
-      <WorldMap className="map-background" />
+      <WorldMap className="map-background" mode={darkMode ? 'dark' : 'light'} />
       {/* UI overlays */}
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 10 }}>
         {/* TopBar */}
@@ -89,14 +89,25 @@ function FiltersBar() {
   const [minRange, setMinRange] = useState(4000);
   const [minVelocity, setMinVelocity] = useState(30);
   const [minWeight, setMinWeight] = useState(150);
+  const [viewBy, setViewBy] = useState<'threats' | 'countries'>('threats');
 
   return (
     <div className="filters-bar">
       <div className="filters-bar__row">
         <div className="filters-bar__viewby">
           <span>View By</span>
-          <button className="filters-bar__btn filters-bar__btn--active">Threats</button>
-          <button className="filters-bar__btn">Countries</button>
+          <button
+            className={`filters-bar__btn${viewBy === 'threats' ? ' filters-bar__btn--active' : ''}`}
+            onClick={() => setViewBy('threats')}
+          >
+            Threats
+          </button>
+          <button
+            className={`filters-bar__btn${viewBy === 'countries' ? ' filters-bar__btn--active' : ''}`}
+            onClick={() => setViewBy('countries')}
+          >
+            Countries
+          </button>
         </div>
         <button className="filters-bar__reset">Reset</button>
       </div>
