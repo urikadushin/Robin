@@ -3,15 +3,24 @@ import './App.css';
 import WorldMap from './components/figma/WorldMap';
 
 function App() {
+  const [darkMode, setDarkMode] = React.useState(() => {
+    const stored = localStorage.getItem('darkMode');
+    return stored === 'true';
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
+  }, [darkMode]);
+
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+    <div className={darkMode ? 'dark-mode' : ''} style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       {/* Map as interactive background */}
       <WorldMap className="map-background" />
       {/* UI overlays */}
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 10 }}>
         {/* TopBar */}
         <div style={{ pointerEvents: 'auto', position: 'absolute', top: 0, left: 0, right: 0 }}>
-          <TopBar />
+          <TopBar darkMode={darkMode} setDarkMode={setDarkMode} />
         </div>
         {/* Sidebar */}
         <div style={{ pointerEvents: 'auto', position: 'absolute', top: 56, left: 0, bottom: 0 }}>
@@ -34,14 +43,30 @@ function App() {
 
 
 
+
 export default App;
 
 
-function TopBar() {
+function TopBar({ darkMode, setDarkMode }: { darkMode: boolean, setDarkMode: (v: boolean) => void }) {
   return (
     <header className="top-bar">
       <div className="top-bar__title">Explore</div>
       <div className="top-bar__spacer" />
+      <button
+        style={{
+          background: 'none',
+          border: 'none',
+          color: 'var(--text)',
+          fontSize: '1.2rem',
+          cursor: 'pointer',
+          marginRight: 18
+        }}
+        title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        aria-label="Toggle dark mode"
+        onClick={() => setDarkMode(!darkMode)}
+      >
+        {darkMode ? '🌙' : '☀️'}
+      </button>
       <div className="top-bar__icons">
         <span className="icon notification" title="Notifications">🔔</span>
         <span className="icon avatar" title="Profile">👤</span>
