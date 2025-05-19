@@ -30,8 +30,8 @@ function App() {
         <div style={{ pointerEvents: 'auto', position: 'absolute', top: 56, left: 58, right: 0 }}>
           <FiltersBar />
         </div>
-        {/* ResultsPanel */}
-        <div style={{ pointerEvents: 'auto', position: 'absolute', top: 120, right: 0, bottom: 0 }}>
+        {/* ResultsPanel (now directly below FiltersBar) */}
+        <div style={{ pointerEvents: 'auto', position: 'absolute', top: 220, right: 32 }}>
           <ResultsPanel />
         </div>
       </div>

@@ -350,6 +350,9 @@ body {
   margin-bottom: 10px;
   color: var(--text);
 }
+.dark-mode .results-panel__header {
+  color: #23272e;
+}
 .results-panel__compare {
   background: #2b88d8;
   color: #fff;
