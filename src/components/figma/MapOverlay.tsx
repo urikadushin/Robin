@@ -28,22 +28,8 @@ const MapOverlay: React.FC<MapOverlayProps> = ({
       ? `rgba(20,33,61,${opacity})` // #14213d with opacity for dark blue overlay
       : `rgba(255,255,255,${opacity * 0.7})`; // Slightly lighter for light mode
 
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        background,
-        pointerEvents: "none",
-        zIndex,
-        transition: "background 0.3s",
-      }}
-      aria-hidden="true"
-    />
-  );
+  // Overlay disabled as per user request
+  return null;
 };
 
 export default MapOverlay;
