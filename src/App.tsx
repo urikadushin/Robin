@@ -31,7 +31,7 @@ function App() {
           <FiltersBar />
         </div>
         {/* ResultsPanel (now directly below FiltersBar) */}
-        <div style={{ pointerEvents: 'auto', position: 'absolute', top: 220, right: 32 }}>
+        <div style={{ pointerEvents: 'auto', position: 'absolute', top: 250, right: 32 }}>
           <ResultsPanel />
         </div>
       </div>
@@ -91,6 +91,28 @@ function FiltersBar() {
   const [minWeight, setMinWeight] = useState(150);
   const [viewBy, setViewBy] = useState<'threats' | 'countries'>('threats');
 
+  // Utility to update --progress for a slider
+  function updateSliderProgress(e: React.ChangeEvent<HTMLInputElement> | React.FormEvent<HTMLInputElement>) {
+    const input = e.target as HTMLInputElement;
+    const min = Number(input.min);
+    const max = Number(input.max);
+    const val = Number(input.value);
+    const percent = ((val - min) / (max - min)) * 100;
+    input.style.setProperty('--progress', `${percent}%`);
+  }
+
+  // Set initial progress on mount
+  React.useEffect(() => {
+    const sliders = document.querySelectorAll<HTMLInputElement>('.filters-bar input[type="range"]');
+    sliders.forEach(input => {
+      const min = Number(input.min);
+      const max = Number(input.max);
+      const val = Number(input.value);
+      const percent = ((val - min) / (max - min)) * 100;
+      input.style.setProperty('--progress', `${percent}%`);
+    });
+  }, []);
+
   return (
     <div className="filters-bar">
       <div className="filters-bar__row">
@@ -131,7 +153,11 @@ function FiltersBar() {
               min="0"
               max="10000"
               value={minRange}
-              onChange={e => setMinRange(Number(e.target.value))}
+              onChange={e => {
+                setMinRange(Number(e.target.value));
+                updateSliderProgress(e);
+              }}
+              onInput={updateSliderProgress}
             />
           </label>
           <span>{minRange}</span>
@@ -144,7 +170,11 @@ function FiltersBar() {
               min="0"
               max="450"
               value={minVelocity}
-              onChange={e => setMinVelocity(Number(e.target.value))}
+              onChange={e => {
+                setMinVelocity(Number(e.target.value));
+                updateSliderProgress(e);
+              }}
+              onInput={updateSliderProgress}
             />
           </label>
           <span>{minVelocity}</span>
@@ -157,7 +187,11 @@ function FiltersBar() {
               min="0"
               max="500"
               value={minWeight}
-              onChange={e => setMinWeight(Number(e.target.value))}
+              onChange={e => {
+                setMinWeight(Number(e.target.value));
+                updateSliderProgress(e);
+              }}
+              onInput={updateSliderProgress}
             />
           </label>
           <span>{minWeight}</span>

@@ -20,12 +20,12 @@ interface MapOverlayProps {
  */
 const MapOverlay: React.FC<MapOverlayProps> = ({
   mode,
-  opacity = 0.4,
+  opacity = 0.2,
   zIndex = 2,
 }) => {
   const background =
     mode === "dark"
-      ? `rgba(0,0,0,${opacity})`
+      ? `rgba(20,33,61,${opacity})` // #14213d with opacity for dark blue overlay
       : `rgba(255,255,255,${opacity * 0.7})`; // Slightly lighter for light mode
 
   return (
