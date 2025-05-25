@@ -15,7 +15,7 @@ function App() {
   return (
     <div className={darkMode ? 'dark-mode' : ''} style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       {/* Map as interactive background */}
-      <WorldMap className="map-background" mode={darkMode ? 'dark' : 'light'} />
+      <WorldMap className="map-background" />
       {/* UI overlays */}
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 10 }}>
         {/* TopBar */}

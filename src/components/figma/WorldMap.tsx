@@ -1,19 +1,19 @@
 import React from 'react';
 import EsriMap from './EsriMap';
 
-
 interface WorldMapProps {
+  /** Additional CSS class name for the map container */
   className?: string;
+  /** Whether the map should be interactive */
   interactive?: boolean;
-  mode: 'light' | 'dark'; // Add mode prop for overlay
 }
 
 /**
- * Displays a Proxi interactive map embed.
- * Interactivity is handled by Proxi, not by this component.
- * Includes a semi-transparent overlay for light/dark modes.
+ * Displays an interactive map using ESRI's ArcGIS API.
  */
-const WorldMap: React.FC<WorldMapProps> = ({ className }) => {
+const WorldMap: React.FC<WorldMapProps> = ({ 
+  className
+}) => {
   return <EsriMap className={className} />;
 };
 
