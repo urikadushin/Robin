@@ -430,6 +430,29 @@ input[type="range"]::-moz-range-thumb {
   height: 6px;
   border-radius: 3px;
 }
+
+/* Custom scrollbar for results panel */
+.results-panel {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.results-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.results-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.results-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.results-panel::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
 .dark-mode input[type="range"]::-ms-thumb {
   background: linear-gradient(145deg, #22335b 60%, #314a7c 100%);
   border: 2px solid #AFF954;
