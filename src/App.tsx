@@ -90,8 +90,8 @@ function Sidebar() {
 
 function FiltersBar() {
   const [range, setRange] = useState<[number, number]>([0, 10000]);
-  const [velocity, setVelocity] = useState<[number, number]>([0, 450]);
-  const [weight, setWeight] = useState<[number, number]>([0, 500]);
+  const [velocity, setVelocity] = useState<[number, number]>([0, 4000]);
+  const [weight, setWeight] = useState<[number, number]>([0, 25000]);
   const [viewBy, setViewBy] = useState<'threats' | 'countries'>('threats');
 
   return (
@@ -117,13 +117,13 @@ function FiltersBar() {
       <div className="filters-bar__filters">
         <div className="filters-bar__threat-types">
           <button className="filters-bar__threat-btn filters-bar__threat-btn--active">
-            <span role="img" aria-label="Missile">🚀</span> Missile
+            <span role="img" aria-label="Missile" style={{ fontSize: '18px', fontWeight: 'bold' }}>▲</span> Missile
           </button>
           <button className="filters-bar__threat-btn">
-            <span role="img" aria-label="UAV">🛩️</span> UAV
+            <span role="img" aria-label="UAV" style={{ fontSize: '18px' }}>✈</span> UAV
           </button>
           <button className="filters-bar__threat-btn">
-            <span role="img" aria-label="Cruise">🛸</span> Cruise
+            <span role="img" aria-label="Cruise" style={{ fontSize: '18px', fontWeight: 'bold' }}>➤</span> Cruise
           </button>
         </div>
         <div className="filter-group">
@@ -134,6 +134,7 @@ function FiltersBar() {
           <DualRangeSlider
             min={0}
             max={10000}
+            step={10}
             value={range}
             onChange={setRange}
           />
@@ -146,7 +147,8 @@ function FiltersBar() {
           </div>
           <DualRangeSlider
             min={0}
-            max={450}
+            max={4000}
+            step={10}
             value={velocity}
             onChange={setVelocity}
           />
@@ -159,7 +161,8 @@ function FiltersBar() {
           </div>
           <DualRangeSlider
             min={0}
-            max={500}
+            max={25000}
+            step={10}
             value={weight}
             onChange={setWeight}
           />
