@@ -10,6 +10,11 @@ function App() {
     return stored === 'true';
   });
 
+  // Filter state
+  const [range, setRange] = useState<[number, number]>([0, 10000]);
+  const [velocity, setVelocity] = useState<[number, number]>([0, 4000]);
+  const [weight, setWeight] = useState<[number, number]>([0, 25000]);
+
   React.useEffect(() => {
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
   }, [darkMode]);
@@ -30,7 +35,14 @@ function App() {
         </div>
         {/* FiltersBar */}
         <div style={{ pointerEvents: 'auto', position: 'absolute', top: 56, left: 58, right: 0 }}>
-          <FiltersBar />
+          <FiltersBar
+            range={range}
+            setRange={setRange}
+            velocity={velocity}
+            setVelocity={setVelocity}
+            weight={weight}
+            setWeight={setWeight}
+          />
         </div>
         {/* ResultsPanel (positioned higher on the screen) */}
         <div style={{
@@ -41,7 +53,11 @@ function App() {
           width: 'calc(100% - 32px)',
           maxWidth: '700px'
         }}>
-          <ResultsPanel />
+          <ResultsPanel
+            rangeFilter={range}
+            velocityFilter={velocity}
+            weightFilter={weight}
+          />
         </div>
       </div>
     </div>
@@ -88,10 +104,16 @@ function Sidebar() {
   );
 }
 
-function FiltersBar() {
-  const [range, setRange] = useState<[number, number]>([0, 10000]);
-  const [velocity, setVelocity] = useState<[number, number]>([0, 4000]);
-  const [weight, setWeight] = useState<[number, number]>([0, 25000]);
+interface FiltersBarProps {
+  range: [number, number];
+  setRange: (value: [number, number]) => void;
+  velocity: [number, number];
+  setVelocity: (value: [number, number]) => void;
+  weight: [number, number];
+  setWeight: (value: [number, number]) => void;
+}
+
+function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight }: FiltersBarProps) {
   const [viewBy, setViewBy] = useState<'threats' | 'countries'>('threats');
 
   return (
@@ -187,7 +209,13 @@ interface ThreatData {
   year?: number;
 }
 
-const ResultsPanel: React.FC = () => {
+interface ResultsPanelProps {
+  rangeFilter: [number, number];
+  velocityFilter: [number, number];
+  weightFilter: [number, number];
+}
+
+const ResultsPanel: React.FC<ResultsPanelProps> = ({ rangeFilter, velocityFilter, weightFilter }) => {
   const [hoveredThreatId, setHoveredThreatId] = useState<string | null>(null);
 
   const threats: ThreatData[] = [
@@ -300,7 +328,7 @@ const ResultsPanel: React.FC = () => {
   const containerStyle: React.CSSProperties = {
     backgroundColor: 'transparent',
     width: '100%',
-    maxWidth: '420px',
+    maxWidth: '450px',
     height: 'calc(100vh - 200px)',
     padding: '12px 0 20px',
     display: 'flex',
@@ -336,7 +364,7 @@ const ResultsPanel: React.FC = () => {
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    maxWidth: '420px',
+    maxWidth: '450px',
     backgroundColor: 'transparent',
     padding: '12px 0',
     pointerEvents: 'auto',
@@ -449,7 +477,19 @@ const ResultsPanel: React.FC = () => {
         alignItems: 'flex-end'
       }}>
         <div style={{ width: '100%', maxWidth: '700px' }}>
-          {threats.map((threat) => {
+          {threats.filter((threat) => {
+            // Parse numeric values from strings
+            const threatRange = parseInt(threat.range.replace(/[^\d]/g, ''));
+            const threatSpeed = parseInt(threat.speed.replace(/[^\d]/g, ''));
+            const threatWeight = parseInt(threat.weight.replace(/[^\d]/g, ''));
+
+            // Filter based on slider values
+            return (
+              threatRange >= rangeFilter[0] && threatRange <= rangeFilter[1] &&
+              threatSpeed >= velocityFilter[0] && threatSpeed <= velocityFilter[1] &&
+              threatWeight >= weightFilter[0] && threatWeight <= weightFilter[1]
+            );
+          }).map((threat) => {
             const isHovered = hoveredThreatId === threat.id;
             return (
               <div

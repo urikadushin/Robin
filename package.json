@@ -1,0 +1,30 @@
+{
+  "name": "figma-gallery",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/react-window": "^1.8.8",
+    "esri-loader": "^3.7.0",
+    "leaflet": "^1.9.4",
+    "mapbox-gl": "^2.13.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-leaflet": "^4.2.1",
+    "react-map-gl": "^6.1.20",
+    "react-virtualized-auto-sizer": "^2.0.2",
+    "react-window": "^2.2.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}
