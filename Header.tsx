@@ -21,7 +21,7 @@ const Header: React.FC = () => {
         alignItems: 'center',
         height: '32px'
       }}>
-        <img 
+        <img
           src="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/wxplore-2.png"
           alt="Logo"
           style={{
@@ -36,7 +36,7 @@ const Header: React.FC = () => {
           letterSpacing: '-0.96px',
           color: '#144a54'
         }}>
-          Explore
+          ALUMA
         </span>
       </div>
 
@@ -56,7 +56,7 @@ const Header: React.FC = () => {
           height: '40px',
           border: '1px solid #144a5440'
         }}>
-          <img 
+          <img
             src="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/notifica.png"
             alt="Notifications"
             style={{
@@ -65,7 +65,7 @@ const Header: React.FC = () => {
               cursor: 'pointer'
             }}
           />
-          <img 
+          <img
             src="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/avatar.png"
             alt="Avatar"
             style={{
@@ -84,7 +84,7 @@ const Header: React.FC = () => {
           padding: '4px',
           alignItems: 'center'
         }}>
-          <img 
+          <img
             src="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/minus-th.png"
             alt="Minus"
             style={{
@@ -93,7 +93,7 @@ const Header: React.FC = () => {
               cursor: 'pointer'
             }}
           />
-          <img 
+          <img
             src="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/minus-do.png"
             alt="Double Down"
             style={{
@@ -109,7 +109,7 @@ const Header: React.FC = () => {
             width: '32px',
             height: '32px'
           }}>
-            <img 
+            <img
               src="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/x-mark.png"
               alt="Close"
               style={{
