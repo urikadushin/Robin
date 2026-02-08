@@ -1,8 +1,161 @@
-import React, { useState, useRef, useCallback } from "react";
-import './App.css';
+import React, { useState, useEffect } from "react";
 import './App.css';
 import WorldMap from './components/figma/WorldMap';
 import DualRangeSlider from './components/DualRangeSlider';
+import { ThreatEditor } from './components/ThreatEditor';
+
+interface ThreatData {
+  id: string;
+  name: string;
+  color: string;
+  missile: string;
+  range: string;
+  speed: string;
+  weight: string;
+  countries: string;
+  warhead?: string;
+  status?: string;
+  year?: number;
+  description?: string;
+  // Tech View
+  length?: string;
+  diameter?: string;
+  launchWeight?: string;
+  payloadWeight?: string;
+  propulsion?: string;
+  guidance?: string;
+  accuracy?: string;
+  // Structural
+  stages?: string;
+  materials?: string;
+  // RCS
+  rcsFront?: string;
+  rcsSide?: string;
+  stealth?: boolean;
+  // Performance
+  maxAltitude?: string;
+  burnTime?: string;
+  thrust?: string;
+  // Flight Logic
+  flightProfile?: string;
+  maneuverability?: string;
+  // Heat Transfer
+  nosetipMaterial?: string;
+  maxTemp?: string;
+  // Countermeasures
+  decoys?: string;
+  jamming?: string;
+  // Operational
+  deployment?: string;
+  operators?: string;
+}
+
+const initialThreats: ThreatData[] = [
+  {
+    id: 'irbm1',
+    name: 'Emad MRBM',
+    color: '#ff6b6b',
+    missile: 'Ballistic',
+    range: '1700 km',
+    speed: '2400 m/s',
+    weight: '17500 kg',
+    countries: 'Iran',
+    warhead: '1000 kg',
+    status: 'Operational',
+    year: 2015
+  },
+  {
+    id: 'irbm2',
+    name: 'Sejjil-2',
+    color: '#ff6b6b',
+    missile: 'Ballistic',
+    range: '2000 km',
+    speed: '2600 m/s',
+    weight: '21500 kg',
+    countries: 'Iran',
+    warhead: '750 kg',
+    status: 'Operational',
+    year: 2014
+  },
+  {
+    id: 'yembm1',
+    name: 'Qaher-2M',
+    color: '#4ecdc4',
+    missile: 'Ballistic',
+    range: '1800 km',
+    speed: '2300 m/s',
+    weight: '8500 kg',
+    countries: 'Yemen (Houthi)',
+    warhead: '500 kg',
+    status: 'Operational',
+    year: 2019
+  },
+  {
+    id: 'lebbm1',
+    name: 'Fateh-110',
+    color: '#45b7d1',
+    missile: 'Ballistic',
+    range: '300 km',
+    speed: '3500 m/s',
+    weight: '3500 kg',
+    countries: 'Lebanon (Hezbollah)',
+    warhead: '650 kg',
+    status: 'Operational',
+    year: 2012
+  },
+  {
+    id: 'ircm1',
+    name: 'Soumar',
+    color: '#ff9f43',
+    missile: 'Cruise',
+    range: '2500 km',
+    speed: '900 km/h',
+    weight: '1200 kg',
+    countries: 'Iran',
+    warhead: '450 kg',
+    status: 'Operational',
+    year: 2014
+  },
+  {
+    id: 'yemcm1',
+    name: 'Quds-1',
+    color: '#26de81',
+    missile: 'Cruise',
+    range: '800 km',
+    speed: '864 km/h',
+    weight: '300 kg',
+    countries: 'Yemen (Houthi)',
+    warhead: '45 kg',
+    status: 'Operational',
+    year: 2019
+  },
+  {
+    id: 'iruav1',
+    name: 'Shahed-136',
+    color: '#a55eea',
+    missile: 'Kamikaze Drone',
+    range: '2500 km',
+    speed: '185 km/h',
+    weight: '200 kg',
+    countries: 'Iran',
+    warhead: '40 kg',
+    status: 'Operational',
+    year: 2021
+  },
+  {
+    id: 'lebuav1',
+    name: 'Mirsad-1',
+    color: '#8854d0',
+    missile: 'Surveillance Drone',
+    range: '150 km',
+    speed: '120 km/h',
+    weight: '45 kg',
+    countries: 'Lebanon (Hezbollah)',
+    warhead: 'N/A',
+    status: 'Operational',
+    year: 2020
+  }
+];
 
 function App() {
   const [darkMode, setDarkMode] = React.useState(() => {
@@ -15,9 +168,44 @@ function App() {
   const [velocity, setVelocity] = useState<[number, number]>([0, 4000]);
   const [weight, setWeight] = useState<[number, number]>([0, 25000]);
 
+  // Threat data & Editor state
+  const [threats, setThreats] = useState<ThreatData[]>(() => {
+    const stored = localStorage.getItem('threats');
+    return stored ? JSON.parse(stored) : initialThreats;
+  });
+
+  const [editingThreat, setEditingThreat] = useState<ThreatData | undefined>(undefined);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+
   React.useEffect(() => {
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
   }, [darkMode]);
+
+  // Save threats to local storage
+  React.useEffect(() => {
+    localStorage.setItem('threats', JSON.stringify(threats));
+  }, [threats]);
+
+  const handleEditThreat = (threat: ThreatData) => {
+    setEditingThreat(threat);
+    setIsEditorOpen(true);
+  };
+
+  const handleAddThreat = () => {
+    setEditingThreat(undefined);
+    setIsEditorOpen(true);
+  };
+
+  const handleSaveThreat = (threat: ThreatData) => {
+    setThreats(prev => {
+      const exists = prev.find(t => t.id === threat.id);
+      if (exists) {
+        return prev.map(t => t.id === threat.id ? threat : t);
+      }
+      return [...prev, threat];
+    });
+    setIsEditorOpen(false);
+  };
 
   return (
     <div className={darkMode ? 'dark-mode' : ''} style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
@@ -54,12 +242,24 @@ function App() {
           maxWidth: '700px'
         }}>
           <ResultsPanel
+            threats={threats}
             rangeFilter={range}
             velocityFilter={velocity}
             weightFilter={weight}
+            onEdit={handleEditThreat}
+            onAdd={handleAddThreat}
           />
         </div>
       </div>
+
+      {/* Threat Editor Modal */}
+      {isEditorOpen && (
+        <ThreatEditor
+          threat={editingThreat}
+          onSave={handleSaveThreat}
+          onCancel={() => setIsEditorOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -134,7 +334,16 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight 
             Countries
           </button>
         </div>
-        <button className="filters-bar__reset">Reset</button>
+        <button
+          className="filters-bar__reset"
+          onClick={() => {
+            setRange([0, 10000]);
+            setVelocity([0, 4000]);
+            setWeight([0, 25000]);
+          }}
+        >
+          Reset
+        </button>
       </div>
       <div className="filters-bar__filters">
         <div className="filters-bar__threat-types">
@@ -194,136 +403,24 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight 
   );
 }
 
-
-interface ThreatData {
-  name: string;
-  color: string;
-  missile: string;
-  range: string;
-  speed: string;
-  weight: string;
-  countries: string;
-  id: string;
-  warhead?: string;
-  status?: string;
-  year?: number;
-}
-
 interface ResultsPanelProps {
+  threats: ThreatData[];
   rangeFilter: [number, number];
   velocityFilter: [number, number];
   weightFilter: [number, number];
+  onEdit: (threat: ThreatData) => void;
+  onAdd: () => void;
 }
 
-const ResultsPanel: React.FC<ResultsPanelProps> = ({ rangeFilter, velocityFilter, weightFilter }) => {
+const ResultsPanel: React.FC<ResultsPanelProps> = ({
+  threats,
+  rangeFilter,
+  velocityFilter,
+  weightFilter,
+  onEdit,
+  onAdd
+}) => {
   const [hoveredThreatId, setHoveredThreatId] = useState<string | null>(null);
-
-  const threats: ThreatData[] = [
-    {
-      id: 'irbm1',
-      name: 'Emad MRBM',
-      color: '#ff6b6b',
-      missile: 'Ballistic',
-      range: '1700 km',
-      speed: '2400 m/s',
-      weight: '17500 kg',
-      countries: 'Iran',
-      warhead: '1000 kg',
-      status: 'Operational',
-      year: 2015
-    },
-    {
-      id: 'irbm2',
-      name: 'Sejjil-2',
-      color: '#ff6b6b',
-      missile: 'Ballistic',
-      range: '2000 km',
-      speed: '2600 m/s',
-      weight: '21500 kg',
-      countries: 'Iran',
-      warhead: '750 kg',
-      status: 'Operational',
-      year: 2014
-    },
-    {
-      id: 'yembm1',
-      name: 'Qaher-2M',
-      color: '#4ecdc4',
-      missile: 'Ballistic',
-      range: '1800 km',
-      speed: '2300 m/s',
-      weight: '8500 kg',
-      countries: 'Yemen (Houthi)',
-      warhead: '500 kg',
-      status: 'Operational',
-      year: 2019
-    },
-    {
-      id: 'lebbm1',
-      name: 'Fateh-110',
-      color: '#45b7d1',
-      missile: 'Ballistic',
-      range: '300 km',
-      speed: '3500 m/s',
-      weight: '3500 kg',
-      countries: 'Lebanon (Hezbollah)',
-      warhead: '650 kg',
-      status: 'Operational',
-      year: 2012
-    },
-    {
-      id: 'ircm1',
-      name: 'Soumar',
-      color: '#ff9f43',
-      missile: 'Cruise',
-      range: '2500 km',
-      speed: '900 km/h',
-      weight: '1200 kg',
-      countries: 'Iran',
-      warhead: '450 kg',
-      status: 'Operational',
-      year: 2014
-    },
-    {
-      id: 'yemcm1',
-      name: 'Quds-1',
-      color: '#26de81',
-      missile: 'Cruise',
-      range: '800 km',
-      speed: '864 km/h',
-      weight: '300 kg',
-      countries: 'Yemen (Houthi)',
-      warhead: '45 kg',
-      status: 'Operational',
-      year: 2019
-    },
-    {
-      id: 'iruav1',
-      name: 'Shahed-136',
-      color: '#a55eea',
-      missile: 'Kamikaze Drone',
-      range: '2500 km',
-      speed: '185 km/h',
-      weight: '200 kg',
-      countries: 'Iran',
-      warhead: '40 kg',
-      status: 'Operational',
-      year: 2021
-    },
-    {
-      id: 'lebuav1',
-      name: 'Mirsad-1',
-      color: '#8854d0',
-      missile: 'Surveillance Drone',
-      range: '150 km',
-      speed: '120 km/h',
-      weight: '45 kg',
-      countries: 'Lebanon (Hezbollah)',
-      warhead: 'N/A',
-      status: 'Operational',
-      year: 2020
-    }
-  ];
 
   const containerStyle: React.CSSProperties = {
     backgroundColor: 'transparent',
@@ -399,8 +496,10 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ rangeFilter, velocityFilter
     margin: `0 0 12px 0`,
     width: '100%',
     boxSizing: 'border-box',
-    height: `90px`,
-    zIndex: 1
+    height: `auto`,
+    minHeight: '90px',
+    zIndex: 1,
+    position: 'relative'
   });
 
   const colorIndicatorStyle = (color: string): React.CSSProperties => ({
@@ -449,18 +548,29 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ rangeFilter, velocityFilter
           }}>
             Results ({threats.length})
           </h3>
-          <button
-            style={buttonStyle}
-            onMouseEnter={(e) => {
-              Object.assign(e.currentTarget.style, buttonHoverStyle);
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '';
-              e.currentTarget.style.transform = '';
-            }}
-          >
-            Comparison
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              style={buttonStyle}
+              onMouseEnter={(e) => Object.assign(e.currentTarget.style, buttonHoverStyle)}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '';
+                e.currentTarget.style.transform = '';
+              }}
+              onClick={onAdd}
+            >
+              + Add Threat
+            </button>
+            <button
+              style={{ ...buttonStyle, backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              onMouseEnter={(e) => Object.assign(e.currentTarget.style, buttonHoverStyle)}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '';
+                e.currentTarget.style.transform = '';
+              }}
+            >
+              Comparison
+            </button>
+          </div>
         </div>
       </div>
 
@@ -513,6 +623,26 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ rangeFilter, velocityFilter
                     }}>
                       {threat.name}
                     </div>
+                    {/* Edit Button - Visible on Hover */}
+                    <button
+                      style={{
+                        opacity: isHovered ? 1 : 0,
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
+                        cursor: 'pointer',
+                        transition: 'opacity 0.2s ease',
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(threat);
+                      }}
+                    >
+                      Edit
+                    </button>
                   </div>
                   <div style={{
                     display: 'flex',
