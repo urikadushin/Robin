@@ -5,7 +5,6 @@ import DualRangeSlider from './components/DualRangeSlider';
 import { ThreatEditor } from './components/ThreatEditor';
 import { api } from './services/api';
 import { mapFrontendToBackend, mapBackendToFrontend } from './utils/threatMapper';
-import { ComparisonView } from './components/ComparisonView';
 
 export interface ThreatData {
   id: string;
@@ -199,11 +198,8 @@ function App() {
   // Threat data & Editor state
   const [threats, setThreats] = useState<ThreatData[]>([]);
 
-  const [selectedThreatIds, setSelectedThreatIds] = useState<Set<string>>(new Set());
-
   const [editingThreat, setEditingThreat] = useState<ThreatData | undefined>(undefined);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [isComparisonOpen, setIsComparisonOpen] = useState(false);
 
   React.useEffect(() => {
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
@@ -276,16 +272,6 @@ function App() {
     };
     loadThreats();
   }, []);
-
-  const handleToggleSelection = (id: string) => {
-    const newSelection = new Set(selectedThreatIds);
-    if (newSelection.has(id)) {
-      newSelection.delete(id);
-    } else {
-      newSelection.add(id);
-    }
-    setSelectedThreatIds(newSelection);
-  };
 
   const handleEditThreat = async (threat: ThreatData) => {
     try {
@@ -375,11 +361,8 @@ function App() {
             rangeFilter={range}
             velocityFilter={velocity}
             weightFilter={weight}
-            selectedThreatIds={selectedThreatIds}
-            onToggleSelection={handleToggleSelection}
             onEdit={handleEditThreat}
             onAdd={handleAddThreat}
-            onCompare={() => setIsComparisonOpen(true)}
           />
         </div>
       </div>
@@ -390,14 +373,6 @@ function App() {
           threat={editingThreat}
           onSave={handleSaveThreat}
           onCancel={() => setIsEditorOpen(false)}
-        />
-      )}
-
-      {/* Comparison View Modal */}
-      {isComparisonOpen && (
-        <ComparisonView
-          threats={threats.filter(t => selectedThreatIds.has(t.id))}
-          onClose={() => setIsComparisonOpen(false)}
         />
       )}
     </div>
@@ -553,11 +528,8 @@ interface ResultsPanelProps {
   rangeFilter: [number, number];
   velocityFilter: [number, number];
   weightFilter: [number, number];
-  selectedThreatIds: Set<string>;
-  onToggleSelection: (id: string) => void;
   onEdit: (threat: ThreatData) => void;
   onAdd: () => void;
-  onCompare: () => void;
 }
 
 const ResultsPanel: React.FC<ResultsPanelProps> = ({
@@ -565,11 +537,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
   rangeFilter,
   velocityFilter,
   weightFilter,
-  selectedThreatIds,
-  onToggleSelection,
   onEdit,
-  onAdd,
-  onCompare
+  onAdd
 }) => {
   const [hoveredThreatId, setHoveredThreatId] = useState<string | null>(null);
 
@@ -632,16 +601,16 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
     width: '100%'
   };
 
-  const getThreatItemStyle = (threatId: string, isHovered: boolean, isSelected: boolean): React.CSSProperties => ({
+  const getThreatItemStyle = (threatId: string, isHovered: boolean): React.CSSProperties => ({
     display: 'flex',
     flexDirection: 'column',
     padding: '10px 12px',
-    backgroundColor: isSelected ? 'rgba(var(--accent-rgb), 0.1)' : 'var(--panel-bg)',
+    backgroundColor: 'var(--panel-bg)',
     backdropFilter: 'blur(10px)',
     borderRadius: '12px',
     cursor: 'pointer',
     transition: 'all 0.25s ease',
-    border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+    border: '1px solid var(--border)',
     transform: isHovered ? 'translateY(-4px) scale(1.01)' : 'none',
     boxShadow: isHovered ? 'var(--shadow-hover)' : 'var(--shadow)',
     margin: `0 0 12px 0`,
@@ -686,9 +655,6 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
     flexShrink: 0
   };
 
-  const comparisonCount = selectedThreatIds.size;
-  const isComparisonEnabled = comparisonCount >= 2;
-
   return (
     <div className="results-panel" style={containerStyle}>
       <div style={headerStyle}>
@@ -715,22 +681,14 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
               + Add Threat
             </button>
             <button
-              style={{
-                ...buttonStyle,
-                backgroundColor: isComparisonEnabled ? 'var(--panel-bg)' : 'rgba(128, 128, 128, 0.2)',
-                border: isComparisonEnabled ? '1px solid var(--border)' : '1px solid transparent',
-                color: isComparisonEnabled ? 'var(--text)' : 'rgba(var(--text-rgb), 0.5)',
-                cursor: isComparisonEnabled ? 'pointer' : 'not-allowed'
-              }}
-              disabled={!isComparisonEnabled}
-              onClick={onCompare}
-              onMouseEnter={(e) => isComparisonEnabled && Object.assign(e.currentTarget.style, buttonHoverStyle)}
+              style={{ ...buttonStyle, backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              onMouseEnter={(e) => Object.assign(e.currentTarget.style, buttonHoverStyle)}
               onMouseLeave={(e) => {
                 e.currentTarget.style.opacity = '';
                 e.currentTarget.style.transform = '';
               }}
             >
-              Comparison {comparisonCount > 0 ? `(${comparisonCount})` : ''}
+              Comparison
             </button>
           </div>
         </div>
@@ -769,38 +727,15 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
           );
         }).map((threat) => {
           const isHovered = hoveredThreatId === threat.id;
-          const isSelected = selectedThreatIds.has(threat.id);
           return (
             <div
               key={threat.id}
-              style={getThreatItemStyle(threat.id, isHovered, isSelected)}
+              style={getThreatItemStyle(threat.id, isHovered)}
               onMouseEnter={() => setHoveredThreatId(threat.id)}
               onMouseLeave={() => setHoveredThreatId(null)}
-              onClick={() => onToggleSelection(threat.id)}
             >
               <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%', marginBottom: '8px' }}>
-                  <div
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '4px',
-                      border: `2px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
-                      backgroundColor: isSelected ? 'var(--accent)' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '8px',
-                      transition: 'all 0.2s',
-                      cursor: 'pointer'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleSelection(threat.id);
-                    }}
-                  >
-                    {isSelected && <span style={{ color: '#fff', fontSize: '14px' }}>✓</span>}
-                  </div>
                   <div style={colorIndicatorStyle(threat.color)} />
                   <div style={{
                     fontFamily: 'Inter',
