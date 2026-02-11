@@ -30,7 +30,7 @@ export const api = {
     },
 
     async getFullThreat(id: number): Promise<any> {
-        const response = await fetch(`${API_BASE_URL}/missiles/${id}/full`);
+        const response = await fetch(`${API_BASE_URL}/full-missile/${id}`);
         if (!response.ok) throw new Error('Failed to fetch full threat data');
         return response.json();
     },
@@ -38,7 +38,7 @@ export const api = {
     async saveFullThreat(threatData: ThreatData): Promise<any> {
         const payload = mapToBackendFormat(threatData);
 
-        const response = await fetch(`${API_BASE_URL}/missiles/full`, {
+        const response = await fetch(`${API_BASE_URL}/full-missile/save`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
