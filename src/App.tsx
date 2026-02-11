@@ -4,8 +4,9 @@ import WorldMap from './components/figma/WorldMap';
 import DualRangeSlider from './components/DualRangeSlider';
 import { ThreatEditor } from './components/ThreatEditor';
 import { api } from './services/api';
+import { mapFrontendToBackend, mapBackendToFrontend } from './utils/threatMapper';
 
-interface ThreatData {
+export interface ThreatData {
   id: string;
   name: string;
   color: string;
@@ -204,35 +205,69 @@ function App() {
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
   }, [darkMode]);
 
+  // Helper to extract number from strings
+  const parseNum = (val: string | number | undefined) => {
+    if (typeof val === 'number') return val;
+    if (!val || val === 'Unknown') return 0;
+    const matches = val.toString().match(/(\d+(\.\d+)?)/);
+    return matches ? parseFloat(matches[0]) : 0;
+  };
+
+  // Dynamic boundaries based on data
+  const bounds = React.useMemo(() => {
+    if (threats.length === 0) return {
+      range: [0, 10000] as [number, number],
+      velocity: [0, 4000] as [number, number],
+      weight: [0, 25000] as [number, number]
+    };
+
+    const ranges = threats.map(t => t.maxRange ?? parseNum(t.range));
+    const velocities = threats.map(t => parseNum(t.speed));
+    const weights = threats.map(t => parseNum(t.weight));
+
+    return {
+      range: [0, Math.ceil(Math.max(...ranges, 1000))] as [number, number],
+      velocity: [0, Math.ceil(Math.max(...velocities, 1000))] as [number, number],
+      weight: [0, Math.ceil(Math.max(...weights, 1000))] as [number, number]
+    };
+  }, [threats]);
+
+  // Reset filters when bounds change significantly or on load
+  useEffect(() => {
+    setRange([bounds.range[0], bounds.range[1]]);
+    setVelocity([bounds.velocity[0], bounds.velocity[1]]);
+    setWeight([bounds.weight[0], bounds.weight[1]]);
+  }, [bounds]);
+
   React.useEffect(() => {
-    // Load threats from API
     const loadThreats = async () => {
       try {
-        const data = await api.getMissiles();
-        // Transform backend data (which might contain 'id', 'name') to frontend model if needed
-        // Assuming backend returns array of objects that roughly match ThreatData or need mapping
-        // For now, mapping directly assuming generic structure or extending frontend to handle it.
-        // Since backend strictly returns 'missiles' table columns (id, name, type, etc), 
-        // we might lose 'range', 'speed' etc. currently until Phase 3.
-        // We will merge with initialThreats for demo purposes if ID matches or just use DB data.
+        const missiles = await api.getMissiles();
+        console.log("Raw missiles from API:", missiles);
 
-        // Improve: If DB is empty, use initialThreats? No, user wants DB.
-        // For basic CRUD, we map DB rows.
-        const mappedThreats = data.map((m: any) => ({
-          id: m.id.toString(),
-          name: m.name,
-          missile: m.type || 'Ballistic',
-          range: 'Unknown', // Placeholder until weightandsize integration
-          speed: 'Unknown',
-          weight: 'Unknown',
-          countries: 'Unknown',
-          status: 'Operational',
-          color: '#ff6b6b'
-        }));
-        setThreats(mappedThreats);
+        const detailedThreats: ThreatData[] = [];
+        for (const m of missiles) {
+          try {
+            const ws = await api.getWeightAndSize(m.id);
+            // Assuming getAerodynamics exists even if empty
+            let aero: any[] = [];
+            try {
+              aero = await api.getAerodynamics(m.id);
+            } catch (e) {
+              console.warn(`Aerodynamics missing for missile ${m.id}`);
+            }
+            detailedThreats.push(mapBackendToFrontend(m, ws, aero));
+          } catch (mError) {
+            console.error(`Error loading details for missile ${m.id}:`, mError);
+            // Push partial data if possible or skip
+            detailedThreats.push(mapBackendToFrontend(m, [], []));
+          }
+        }
+
+        console.log("Detailed Threats Loaded:", detailedThreats);
+        setThreats(detailedThreats);
       } catch (error) {
         console.error("Failed to load threats from API", error);
-        // Fallback or empty? keeping state generic.
       }
     };
     loadThreats();
@@ -250,22 +285,45 @@ function App() {
 
   const handleSaveThreat = async (updatedThreat: ThreatData) => {
     try {
-      if (threats.some(t => t.id === updatedThreat.id)) {
-        // Update
-        await api.updateMissile(parseInt(updatedThreat.id), { name: updatedThreat.name });
-        setThreats(prev => prev.map(t => (t.id === updatedThreat.id ? updatedThreat : t)));
+      if (editingThreat) {
+        // Update existing
+        const { missile, weightAndSize } = mapFrontendToBackend(updatedThreat);
+
+        // Update Missile
+        // Ensure ID is passed and is a number
+        const id = parseInt(editingThreat.id);
+        if (isNaN(id)) throw new Error("Invalid ID");
+
+        await api.updateMissile(id, { ...missile, id });
+
+        // Update WeightAndSize
+        try {
+          await api.deleteWeightAndSize(editingThreat.id);
+          for (const ws of weightAndSize) {
+            await api.createWeightAndSize(ws);
+          }
+        } catch (wsError) {
+          console.error("Failed to update weightandsize", wsError);
+        }
+
+        setThreats(threats.map(t => t.id === editingThreat.id ? updatedThreat : t));
       } else {
-        // Create
-        const result = await api.createMissile({ name: updatedThreat.name });
-        // API returns { id: number, ... }
-        const newThreat = { ...updatedThreat, id: result.id.toString() };
-        setThreats(prev => [...prev, newThreat]);
+        // Create new
+        const { missile, weightAndSize } = mapFrontendToBackend({ ...updatedThreat, id: '0' });
+        const newMissile = await api.createMissile(missile);
+        const newId = newMissile.id.toString();
+
+        for (const ws of weightAndSize) {
+          await api.createWeightAndSize({ ...ws, missile_id: newMissile.id });
+        }
+
+        setThreats([...threats, { ...updatedThreat, id: newId }]);
       }
       setIsEditorOpen(false);
       setEditingThreat(undefined);
     } catch (error) {
       console.error("Failed to save threat", error);
-      alert("Failed to save threat to database. See console.");
+      alert("Failed to save threat to backend");
     }
   };
 
@@ -292,6 +350,7 @@ function App() {
             setVelocity={setVelocity}
             weight={weight}
             setWeight={setWeight}
+            bounds={bounds}
           />
         </div>
         {/* ResultsPanel (positioned higher on the screen) */}
@@ -373,9 +432,14 @@ interface FiltersBarProps {
   setVelocity: (value: [number, number]) => void;
   weight: [number, number];
   setWeight: (value: [number, number]) => void;
+  bounds: {
+    range: [number, number];
+    velocity: [number, number];
+    weight: [number, number];
+  };
 }
 
-function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight }: FiltersBarProps) {
+function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight, bounds }: FiltersBarProps) {
   const [viewBy, setViewBy] = useState<'threats' | 'countries'>('threats');
 
   return (
@@ -399,9 +463,9 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight 
         <button
           className="filters-bar__reset"
           onClick={() => {
-            setRange([0, 10000]);
-            setVelocity([0, 4000]);
-            setWeight([0, 25000]);
+            setRange([bounds.range[0], bounds.range[1]]);
+            setVelocity([bounds.velocity[0], bounds.velocity[1]]);
+            setWeight([bounds.weight[0], bounds.weight[1]]);
           }}
         >
           Reset
@@ -425,9 +489,9 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight 
             <span>{range[0]} - {range[1]}</span>
           </div>
           <DualRangeSlider
-            min={0}
-            max={10000}
-            step={10}
+            min={bounds.range[0]}
+            max={bounds.range[1]}
+            step={Math.ceil(bounds.range[1] / 100)}
             value={range}
             onChange={setRange}
           />
@@ -439,9 +503,9 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight 
             <span>{velocity[0]} - {velocity[1]}</span>
           </div>
           <DualRangeSlider
-            min={0}
-            max={4000}
-            step={10}
+            min={bounds.velocity[0]}
+            max={bounds.velocity[1]}
+            step={Math.ceil(bounds.velocity[1] / 100)}
             value={velocity}
             onChange={setVelocity}
           />
@@ -453,9 +517,9 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight 
             <span>{weight[0]} - {weight[1]}</span>
           </div>
           <DualRangeSlider
-            min={0}
-            max={25000}
-            step={10}
+            min={bounds.weight[0]}
+            max={bounds.weight[1]}
+            step={Math.ceil(bounds.weight[1] / 100)}
             value={weight}
             onChange={setWeight}
           />
@@ -648,92 +712,97 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
         flexDirection: 'column',
         alignItems: 'flex-end'
       }}>
-        <div style={{ width: '100%', maxWidth: '700px' }}>
-          {threats.filter((threat) => {
-            // Parse numeric values from strings
-            const threatRange = threat.maxRange ?? (threat.range ? parseInt(threat.range.replace(/[^\d]/g, '')) : 0);
-            const threatSpeed = parseInt(threat.speed.replace(/[^\d]/g, ''));
-            const threatWeight = parseInt(threat.weight.replace(/[^\d]/g, ''));
+        {threats.filter((threat) => {
+          // Helper to extract number from strings like "1000 km" or "Unknown"
+          const parseNum = (val: string | number | undefined) => {
+            if (typeof val === 'number') return val;
+            if (!val || val === 'Unknown') return 0;
+            const matches = val.toString().match(/(\d+(\.\d+)?)/);
+            return matches ? parseFloat(matches[0]) : 0;
+          };
 
-            // Filter based on slider values
-            return (
-              threatRange >= rangeFilter[0] && threatRange <= rangeFilter[1] &&
-              threatSpeed >= velocityFilter[0] && threatSpeed <= velocityFilter[1] &&
-              threatWeight >= weightFilter[0] && threatWeight <= weightFilter[1]
-            );
-          }).map((threat) => {
-            const isHovered = hoveredThreatId === threat.id;
-            return (
-              <div
-                key={threat.id}
-                style={getThreatItemStyle(threat.id, isHovered)}
-                onMouseEnter={() => setHoveredThreatId(threat.id)}
-                onMouseLeave={() => setHoveredThreatId(null)}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%', marginBottom: '8px' }}>
-                    <div style={colorIndicatorStyle(threat.color)} />
-                    <div style={{
-                      fontFamily: 'Inter',
-                      fontSize: '18px',
-                      fontWeight: 500,
-                      color: 'var(--text)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      flex: 1
-                    }}>
-                      {threat.name}
-                    </div>
-                    {/* Edit Button - Visible on Hover */}
-                    <button
-                      style={{
-                        opacity: isHovered ? 1 : 0,
-                        padding: '4px 8px',
-                        fontSize: '12px',
-                        borderRadius: '4px',
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg)',
-                        color: 'var(--text)',
-                        cursor: 'pointer',
-                        transition: 'opacity 0.2s ease',
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(threat);
-                      }}
-                    >
-                      Edit
-                    </button>
-                  </div>
+          const threatRange = threat.maxRange ?? parseNum(threat.range);
+          const threatSpeed = parseNum(threat.speed);
+          const threatWeight = parseNum(threat.weight);
+
+          // Filter based on slider values
+          return (
+            threatRange >= rangeFilter[0] && threatRange <= rangeFilter[1] &&
+            threatSpeed >= velocityFilter[0] && threatSpeed <= velocityFilter[1] &&
+            threatWeight >= weightFilter[0] && threatWeight <= weightFilter[1]
+          );
+        }).map((threat) => {
+          const isHovered = hoveredThreatId === threat.id;
+          return (
+            <div
+              key={threat.id}
+              style={getThreatItemStyle(threat.id, isHovered)}
+              onMouseEnter={() => setHoveredThreatId(threat.id)}
+              onMouseLeave={() => setHoveredThreatId(null)}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%', marginBottom: '8px' }}>
+                  <div style={colorIndicatorStyle(threat.color)} />
                   <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexWrap: 'nowrap',
+                    fontFamily: 'Inter',
+                    fontSize: '18px',
+                    fontWeight: 500,
+                    color: 'var(--text)',
+                    whiteSpace: 'nowrap',
                     overflow: 'hidden',
-                    paddingLeft: '24px',
-                    width: '100%',
-                    gap: '2px'
+                    textOverflow: 'ellipsis',
+                    flex: 1
                   }}>
-                    {[threat.missile, threat.range, threat.speed, threat.weight, threat.countries].map((item, i, arr) => (
-                      <React.Fragment key={i}>
-                        <span style={{
-                          ...metaItemStyle,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          maxWidth: '100%',
-                          display: 'inline-block'
-                        }}>{item}</span>
-                        {i < arr.length - 1 && <div style={dividerStyle} />}
-                      </React.Fragment>
-                    ))}
+                    {threat.name}
                   </div>
+                  {/* Edit Button - Visible on Hover */}
+                  <button
+                    style={{
+                      opacity: isHovered ? 1 : 0,
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                      transition: 'opacity 0.2s ease',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(threat);
+                    }}
+                  >
+                    Edit
+                  </button>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'nowrap',
+                  overflow: 'hidden',
+                  paddingLeft: '24px',
+                  width: '100%',
+                  gap: '2px'
+                }}>
+                  {[threat.missile, threat.range, threat.speed, threat.weight, threat.countries].map((item, i, arr) => (
+                    <React.Fragment key={i}>
+                      <span style={{
+                        ...metaItemStyle,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: '100%',
+                        display: 'inline-block'
+                      }}>{item}</span>
+                      {i < arr.length - 1 && <div style={dividerStyle} />}
+                    </React.Fragment>
+                  ))}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
