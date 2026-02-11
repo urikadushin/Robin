@@ -66,8 +66,8 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
           const newView = new MapView({
             container: mapDiv.current,
             map: newMap,
-            center: [54, 27], // Centered to include Iran, Yemen, and Israel
-            zoom: 5, // Adjusted zoom level to show the entire region
+            center: [40, 52], // Centered on Turkey/Middle East as requested
+            zoom: 4, // Adjusted zoom level to show the entire region
             ui: {
               components: ['attribution']
             },
@@ -90,7 +90,7 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
     // Cleanup function
     return () => {
       mounted = false;
-      
+
       // Safely destroy view if it exists
       const currentView = viewRef.current;
       if (currentView) {
@@ -100,7 +100,7 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
           console.error('Error destroying view:', error);
         }
       }
-      
+
       // Safely destroy map if it exists
       const currentMap = mapRef.current;
       if (currentMap) {
@@ -110,7 +110,7 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
           console.error('Error destroying map:', error);
         }
       }
-      
+
       // Clean up refs
       viewRef.current = null;
       mapRef.current = null;

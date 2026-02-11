@@ -242,24 +242,24 @@ function App() {
   React.useEffect(() => {
     const loadThreats = async () => {
       try {
-        const missiles = await api.getMissiles();
+        const missiles = await api.getAllMissiles();
         console.log("Raw missiles from API:", missiles);
 
         const detailedThreats: ThreatData[] = [];
         for (const m of missiles) {
           try {
-            const ws = await api.getWeightAndSize(m.id);
-            // Assuming getAerodynamics exists even if empty
-            let aero: any[] = [];
-            try {
-              aero = await api.getAerodynamics(m.id);
-            } catch (e) {
-              console.warn(`Aerodynamics missing for missile ${m.id}`);
-            }
-            detailedThreats.push(mapBackendToFrontend(m, ws, aero));
+            // For the summary list, we keep it simple or fetch full if needed
+            // For now, let's fetch full to populate the initial UI correctly
+            const fullData = await api.getFullThreat(m.id);
+            detailedThreats.push(mapBackendToFrontend(
+              fullData.missile,
+              fullData.weightAndSize,
+              fullData.aerodynamics,
+              fullData.performance,
+              [fullData.engine]
+            ));
           } catch (mError) {
             console.error(`Error loading details for missile ${m.id}:`, mError);
-            // Push partial data if possible or skip
             detailedThreats.push(mapBackendToFrontend(m, [], []));
           }
         }
@@ -273,9 +273,28 @@ function App() {
     loadThreats();
   }, []);
 
-  const handleEditThreat = (threat: ThreatData) => {
-    setEditingThreat(threat);
-    setIsEditorOpen(true);
+  const handleEditThreat = async (threat: ThreatData) => {
+    try {
+      const id = parseInt(threat.id);
+      if (!isNaN(id)) {
+        const fullData = await api.getFullThreat(id);
+        const detailedThreat = mapBackendToFrontend(
+          fullData.missile,
+          fullData.weightAndSize,
+          fullData.aerodynamics,
+          fullData.performance,
+          [fullData.engine]
+        );
+        setEditingThreat(detailedThreat);
+      } else {
+        setEditingThreat(threat);
+      }
+      setIsEditorOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch full threat details", error);
+      setEditingThreat(threat);
+      setIsEditorOpen(true);
+    }
   };
 
   const handleAddThreat = () => {
@@ -285,45 +304,20 @@ function App() {
 
   const handleSaveThreat = async (updatedThreat: ThreatData) => {
     try {
+      const response = await api.saveFullThreat(updatedThreat);
+      const savedId = response.id.toString();
+
+      const savedThreat = { ...updatedThreat, id: savedId };
+
       if (editingThreat) {
-        // Update existing
-        const { missile, weightAndSize } = mapFrontendToBackend(updatedThreat);
-
-        // Update Missile
-        // Ensure ID is passed and is a number
-        const id = parseInt(editingThreat.id);
-        if (isNaN(id)) throw new Error("Invalid ID");
-
-        await api.updateMissile(id, { ...missile, id });
-
-        // Update WeightAndSize
-        try {
-          await api.deleteWeightAndSize(editingThreat.id);
-          for (const ws of weightAndSize) {
-            await api.createWeightAndSize(ws);
-          }
-        } catch (wsError) {
-          console.error("Failed to update weightandsize", wsError);
-        }
-
-        setThreats(threats.map(t => t.id === editingThreat.id ? updatedThreat : t));
+        setThreats(threats.map(t => t.id === editingThreat.id ? savedThreat : t));
       } else {
-        // Create new
-        const { missile, weightAndSize } = mapFrontendToBackend({ ...updatedThreat, id: '0' });
-        const newMissile = await api.createMissile(missile);
-        const newId = newMissile.id.toString();
-
-        for (const ws of weightAndSize) {
-          await api.createWeightAndSize({ ...ws, missile_id: newMissile.id });
-        }
-
-        setThreats([...threats, { ...updatedThreat, id: newId }]);
+        setThreats([...threats, savedThreat]);
       }
       setIsEditorOpen(false);
-      setEditingThreat(undefined);
     } catch (error) {
-      console.error("Failed to save threat", error);
-      alert("Failed to save threat to backend");
+      console.error("Failed to save full threat data", error);
+      alert("Failed to save threat data. Check console for details.");
     }
   };
 
