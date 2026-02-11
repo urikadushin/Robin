@@ -3,16 +3,23 @@ import './App.css';
 import WorldMap from './components/figma/WorldMap';
 import DualRangeSlider from './components/DualRangeSlider';
 import { ThreatEditor } from './components/ThreatEditor';
+import { api } from './services/api';
 
 interface ThreatData {
   id: string;
   name: string;
   color: string;
   missile: string;
-  range: string;
+  // range: string; // Deprecated
+  minRange?: number;
+  maxRange?: number;
+  operationalRange?: number;
+  range?: string; // Display
   speed: string;
   weight: string;
   countries: string;
+  manufacturer?: string;
+  rvDesignName?: string;
   warhead?: string;
   status?: string;
   year?: number;
@@ -28,10 +35,6 @@ interface ThreatData {
   // Structural
   stages?: string;
   materials?: string;
-  // RCS
-  rcsFront?: string;
-  rcsSide?: string;
-  stealth?: boolean;
   // Performance
   maxAltitude?: string;
   burnTime?: string;
@@ -48,6 +51,13 @@ interface ThreatData {
   // Operational
   deployment?: string;
   operators?: string;
+
+  // Advanced Engineering
+  btParams?: Record<string, string | number>;
+  rvParams?: Record<string, string | number>;
+  aerodynamics?: any; // JSON structure for aerodynamic tables
+  massProperties?: any; // JSON structure for mass tensors
+  stageData?: any; // JSON structure for Stages, Guidance, and Control
 }
 
 const initialThreats: ThreatData[] = [
@@ -57,9 +67,13 @@ const initialThreats: ThreatData[] = [
     color: '#ff6b6b',
     missile: 'Ballistic',
     range: '1700 km',
+    minRange: 500,
+    maxRange: 1700,
+    operationalRange: 1700,
     speed: '2400 m/s',
     weight: '17500 kg',
     countries: 'Iran',
+    manufacturer: 'Iran',
     warhead: '1000 kg',
     status: 'Operational',
     year: 2015
@@ -70,9 +84,13 @@ const initialThreats: ThreatData[] = [
     color: '#ff6b6b',
     missile: 'Ballistic',
     range: '2000 km',
+    minRange: 700,
+    maxRange: 2000,
+    operationalRange: 2000,
     speed: '2600 m/s',
     weight: '21500 kg',
     countries: 'Iran',
+    manufacturer: 'Iran',
     warhead: '750 kg',
     status: 'Operational',
     year: 2014
@@ -83,9 +101,13 @@ const initialThreats: ThreatData[] = [
     color: '#4ecdc4',
     missile: 'Ballistic',
     range: '1800 km',
+    minRange: 300,
+    maxRange: 1800,
+    operationalRange: 1800,
     speed: '2300 m/s',
     weight: '8500 kg',
     countries: 'Yemen (Houthi)',
+    manufacturer: 'Yemen (Houthi)',
     warhead: '500 kg',
     status: 'Operational',
     year: 2019
@@ -96,12 +118,16 @@ const initialThreats: ThreatData[] = [
     color: '#45b7d1',
     missile: 'Ballistic',
     range: '300 km',
+    minRange: 50,
+    maxRange: 300,
+    operationalRange: 300,
     speed: '3500 m/s',
     weight: '3500 kg',
     countries: 'Lebanon (Hezbollah)',
-    warhead: '650 kg',
+    manufacturer: 'Lebanon (Hezbollah)',
+    warhead: '500 kg',
     status: 'Operational',
-    year: 2012
+    year: 2010
   },
   {
     id: 'ircm1',
@@ -169,10 +195,7 @@ function App() {
   const [weight, setWeight] = useState<[number, number]>([0, 25000]);
 
   // Threat data & Editor state
-  const [threats, setThreats] = useState<ThreatData[]>(() => {
-    const stored = localStorage.getItem('threats');
-    return stored ? JSON.parse(stored) : initialThreats;
-  });
+  const [threats, setThreats] = useState<ThreatData[]>([]);
 
   const [editingThreat, setEditingThreat] = useState<ThreatData | undefined>(undefined);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -181,10 +204,39 @@ function App() {
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
   }, [darkMode]);
 
-  // Save threats to local storage
   React.useEffect(() => {
-    localStorage.setItem('threats', JSON.stringify(threats));
-  }, [threats]);
+    // Load threats from API
+    const loadThreats = async () => {
+      try {
+        const data = await api.getMissiles();
+        // Transform backend data (which might contain 'id', 'name') to frontend model if needed
+        // Assuming backend returns array of objects that roughly match ThreatData or need mapping
+        // For now, mapping directly assuming generic structure or extending frontend to handle it.
+        // Since backend strictly returns 'missiles' table columns (id, name, type, etc), 
+        // we might lose 'range', 'speed' etc. currently until Phase 3.
+        // We will merge with initialThreats for demo purposes if ID matches or just use DB data.
+
+        // Improve: If DB is empty, use initialThreats? No, user wants DB.
+        // For basic CRUD, we map DB rows.
+        const mappedThreats = data.map((m: any) => ({
+          id: m.id.toString(),
+          name: m.name,
+          missile: m.type || 'Ballistic',
+          range: 'Unknown', // Placeholder until weightandsize integration
+          speed: 'Unknown',
+          weight: 'Unknown',
+          countries: 'Unknown',
+          status: 'Operational',
+          color: '#ff6b6b'
+        }));
+        setThreats(mappedThreats);
+      } catch (error) {
+        console.error("Failed to load threats from API", error);
+        // Fallback or empty? keeping state generic.
+      }
+    };
+    loadThreats();
+  }, []);
 
   const handleEditThreat = (threat: ThreatData) => {
     setEditingThreat(threat);
@@ -196,15 +248,25 @@ function App() {
     setIsEditorOpen(true);
   };
 
-  const handleSaveThreat = (threat: ThreatData) => {
-    setThreats(prev => {
-      const exists = prev.find(t => t.id === threat.id);
-      if (exists) {
-        return prev.map(t => t.id === threat.id ? threat : t);
+  const handleSaveThreat = async (updatedThreat: ThreatData) => {
+    try {
+      if (threats.some(t => t.id === updatedThreat.id)) {
+        // Update
+        await api.updateMissile(parseInt(updatedThreat.id), { name: updatedThreat.name });
+        setThreats(prev => prev.map(t => (t.id === updatedThreat.id ? updatedThreat : t)));
+      } else {
+        // Create
+        const result = await api.createMissile({ name: updatedThreat.name });
+        // API returns { id: number, ... }
+        const newThreat = { ...updatedThreat, id: result.id.toString() };
+        setThreats(prev => [...prev, newThreat]);
       }
-      return [...prev, threat];
-    });
-    setIsEditorOpen(false);
+      setIsEditorOpen(false);
+      setEditingThreat(undefined);
+    } catch (error) {
+      console.error("Failed to save threat", error);
+      alert("Failed to save threat to database. See console.");
+    }
   };
 
   return (
@@ -589,7 +651,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
         <div style={{ width: '100%', maxWidth: '700px' }}>
           {threats.filter((threat) => {
             // Parse numeric values from strings
-            const threatRange = parseInt(threat.range.replace(/[^\d]/g, ''));
+            const threatRange = threat.maxRange ?? (threat.range ? parseInt(threat.range.replace(/[^\d]/g, '')) : 0);
             const threatSpeed = parseInt(threat.speed.replace(/[^\d]/g, ''));
             const threatWeight = parseInt(threat.weight.replace(/[^\d]/g, ''));
 

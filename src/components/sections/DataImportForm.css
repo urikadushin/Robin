@@ -1,0 +1,83 @@
+.data-import-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.data-import-header h4 {
+    margin: 0 0 5px;
+    color: var(--text);
+}
+
+.data-import-header p {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+    color: var(--text);
+    opacity: 0.7;
+}
+
+.file-input-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.file-input {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--item-bg);
+    color: var(--text);
+    width: 100%;
+}
+
+.textarea-wrapper {
+    position: relative;
+}
+
+.json-textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: monospace;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    resize: vertical;
+    outline: none;
+    border: 1px solid var(--border);
+}
+
+.json-textarea.error {
+    border-color: #ff6b6b;
+}
+
+.json-textarea.success {
+    border-color: #4ecdc4;
+}
+
+.status-message {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.status-message.error {
+    color: #ff6b6b;
+}
+
+.status-message.success {
+    color: #4ecdc4;
+}
+
+.save-button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+    align-self: flex-end;
+}

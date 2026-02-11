@@ -49,16 +49,41 @@ export const GeneralInformationForm: React.FC<GeneralInformationFormProps> = ({ 
 
             <div style={{ display: 'flex', gap: '20px' }}>
                 <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Range</label>
+                    <label style={labelStyle}>Min Range (km)</label>
                     <input
-                        type="text"
-                        name="range"
-                        value={data.range}
+                        type="number"
+                        name="minRange"
+                        value={data.minRange}
                         onChange={onChange}
                         style={inputStyle}
-                        placeholder="e.g. 2000 km"
+                        placeholder="e.g. 1000"
                     />
                 </div>
+                <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Max Range (km)</label>
+                    <input
+                        type="number"
+                        name="maxRange"
+                        value={data.maxRange}
+                        onChange={onChange}
+                        style={inputStyle}
+                        placeholder="e.g. 2000"
+                    />
+                </div>
+                <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Op. Range (km)</label>
+                    <input
+                        type="number"
+                        name="operationalRange"
+                        value={data.operationalRange}
+                        onChange={onChange}
+                        style={inputStyle}
+                        placeholder="e.g. 1500"
+                    />
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '20px' }}>
                 <div style={{ flex: 1 }}>
                     <label style={labelStyle}>Speed</label>
                     <input
@@ -70,9 +95,6 @@ export const GeneralInformationForm: React.FC<GeneralInformationFormProps> = ({ 
                         placeholder="e.g. Mach 12"
                     />
                 </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '20px' }}>
                 <div style={{ flex: 1 }}>
                     <label style={labelStyle}>Total Weight</label>
                     <input
@@ -84,6 +106,9 @@ export const GeneralInformationForm: React.FC<GeneralInformationFormProps> = ({ 
                         placeholder="e.g. 23,600 kg"
                     />
                 </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '20px' }}>
                 <div style={{ flex: 1 }}>
                     <label style={labelStyle}>Warhead Weight</label>
                     <input
@@ -93,6 +118,17 @@ export const GeneralInformationForm: React.FC<GeneralInformationFormProps> = ({ 
                         onChange={onChange}
                         style={inputStyle}
                         placeholder="e.g. 1,000 kg"
+                    />
+                </div>
+                <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Manufacturer</label>
+                    <input
+                        type="text"
+                        name="manufacturer"
+                        value={data.manufacturer}
+                        onChange={onChange}
+                        style={inputStyle}
+                        placeholder="e.g. Aerospace Industries Org"
                     />
                 </div>
             </div>
@@ -119,6 +155,18 @@ export const GeneralInformationForm: React.FC<GeneralInformationFormProps> = ({ 
                         style={inputStyle}
                     />
                 </div>
+            </div>
+
+            <div className="form-group">
+                <label style={labelStyle}>RV Design Name (File)</label>
+                <input
+                    type="text"
+                    name="rvDesignName"
+                    value={data.rvDesignName}
+                    onChange={onChange}
+                    style={inputStyle}
+                    placeholder="e.g. bulava_rvdesign_file.html"
+                />
             </div>
 
             <div className="form-group">
