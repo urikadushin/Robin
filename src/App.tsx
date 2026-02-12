@@ -6,6 +6,7 @@ import { ThreatEditor } from './components/ThreatEditor';
 import { api } from './services/api';
 import { mapFrontendToBackend, mapBackendToFrontend } from './utils/threatMapper';
 import { ComparisonView } from './components/ComparisonView';
+import { ThreatViewer } from './components/viewer/ThreatViewer';
 
 export interface ThreatData {
   id: string;
@@ -204,6 +205,7 @@ function App() {
   const [editingThreat, setEditingThreat] = useState<ThreatData | undefined>(undefined);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
+  const [viewingThreat, setViewingThreat] = useState<import('../../backend/src/models/FullMissileModel').FullMissileData | undefined>(undefined);
 
   React.useEffect(() => {
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
@@ -316,6 +318,21 @@ function App() {
     setIsEditorOpen(true);
   };
 
+  const handleViewThreat = async (threat: ThreatData) => {
+    try {
+      const id = parseInt(threat.id);
+      if (!isNaN(id)) {
+        const fullData = await api.getFullThreat(id);
+        setViewingThreat(fullData);
+      } else {
+        // Fallback for mock data or non-numeric IDs if necessary
+        console.warn("Cannot view details for non-numeric ID:", threat.id);
+      }
+    } catch (error) {
+      console.error("Failed to fetch details for viewer", error);
+    }
+  };
+
   const handleSaveThreat = async (updatedThreat: ThreatData) => {
     try {
       const response = await api.saveFullThreat(updatedThreat);
@@ -380,6 +397,7 @@ function App() {
             onEdit={handleEditThreat}
             onAdd={handleAddThreat}
             onCompare={() => setIsComparisonOpen(true)}
+            onView={handleViewThreat}
           />
         </div>
       </div>
@@ -398,6 +416,25 @@ function App() {
         <ComparisonView
           threats={threats.filter(t => selectedThreatIds.has(t.id))}
           onClose={() => setIsComparisonOpen(false)}
+        />
+      )}
+
+      {/* New Threat Viewer */}
+      {viewingThreat && (
+        <ThreatViewer
+          threat={viewingThreat}
+          onClose={() => setViewingThreat(undefined)}
+          onEdit={() => {
+            // Logic to switch to edit mode if needed
+            // For now just close viewer and open editor?
+            // Need to map FullMissileData back to ThreatData for editor or make Editor support FullMissileData
+            // Given current architecture, let's just log or implement later
+            console.log("Edit requested from viewer");
+            setViewingThreat(undefined);
+            // We need to find the ThreatData to edit. 
+            const threatToEdit = threats.find(t => t.id === viewingThreat.missile.id?.toString());
+            if (threatToEdit) handleEditThreat(threatToEdit);
+          }}
         />
       )}
     </div>
@@ -558,6 +595,7 @@ interface ResultsPanelProps {
   onEdit: (threat: ThreatData) => void;
   onAdd: () => void;
   onCompare: () => void;
+  onView: (threat: ThreatData) => void;
 }
 
 const ResultsPanel: React.FC<ResultsPanelProps> = ({
@@ -569,7 +607,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
   onToggleSelection,
   onEdit,
   onAdd,
-  onCompare
+  onCompare,
+  onView
 }) => {
   const [hoveredThreatId, setHoveredThreatId] = useState<string | null>(null);
 
@@ -776,7 +815,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
               style={getThreatItemStyle(threat.id, isHovered, isSelected)}
               onMouseEnter={() => setHoveredThreatId(threat.id)}
               onMouseLeave={() => setHoveredThreatId(null)}
-              onClick={() => onToggleSelection(threat.id)}
+              onClick={() => onView(threat)}
             >
               <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%', marginBottom: '8px' }}>

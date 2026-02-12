@@ -11,22 +11,29 @@ export const mapBackendToFrontend = (missile: any, weightAndSize: any[], aerodyn
         return item ? item.property_value : undefined;
     };
 
+    // Find max range and speed from performance data
+    const maxRng = performance.length > 0 ? Math.max(...performance.map(p => p.rng || 0)) : 0;
+    const maxVel = performance.length > 0 ? Math.max(...performance.map(p => p.velEndOfBurn || 0)) : 0;
+    const maxAlt = performance.length > 0 ? Math.max(...performance.map(p => p.apogeeAlt || 0)) : 0;
+
     return {
         id: missile.id.toString(),
         name: missile.name,
-        range: getVal('maxRange') ? `${getVal('maxRange')} km` : 'Unknown',
+        range: getVal('maxRange') ? `${getVal('maxRange')} km` : (maxRng > 0 ? `${maxRng} km` : 'Unknown'),
         minRange: parseFloat(getVal('minRange') || '0'),
-        maxRange: parseFloat(getVal('maxRange') || '0'),
-        operationalRange: parseFloat(getVal('operationalRange') || getVal('maxRange') || '0'),
-        speed: getVal('speed') || 'Unknown',
-        weight: getVal('weight') ? `${getVal('weight')} kg` : 'Unknown',
+        maxRange: parseFloat(getVal('maxRange') || maxRng.toString() || '0'),
+        operationalRange: parseFloat(getVal('operationalRange') || getVal('maxRange') || maxRng.toString() || '0'),
+        speed: performance?.[0]?.velEndOfBurn ? `${performance[0].velEndOfBurn} m/s` : (maxVel > 0 ? `${maxVel} m/s` : 'Unknown'),
+        weight: (getVal('weight') || getVal('launchWeight')) ? `${getVal('weight') || getVal('launchWeight')} kg` : 'Unknown',
         countries: missile.family_type || 'Unknown',
-        manufacturer: getVal('manufacturer') || 'Unknown',
+        manufacturer: missile.manufacturer || getVal('manufacturer') || 'Unknown',
         warhead: missile.explosive_type || 'Unknown',
-        color: getVal('color') || '#ff6b6b',
+        color: missile.color || getVal('color') || '#ff6b6b',
         missile: missile.type || 'Ballistic',
-        status: getVal('status') || 'Operational',
-        year: parseInt(getVal('year') || new Date().getFullYear().toString()),
+        status: missile.status || getVal('status') || 'Operational',
+        year: missile.year ? missile.year : parseInt(getVal('year') || new Date().getFullYear().toString()),
+        description: missile.description || '',
+        rvDesignName: missile.content_rv_file_name || '',
 
         // Tech View
         length: getVal('totalLength'),
@@ -35,7 +42,7 @@ export const mapBackendToFrontend = (missile: any, weightAndSize: any[], aerodyn
         payloadWeight: getVal('wh_weight'),
 
         // Performance
-        maxAltitude: performance?.[0]?.apogeeAlt?.toString(),
+        maxAltitude: maxAlt > 0 ? maxAlt.toString() : undefined,
         burnTime: engines?.[0]?.tburn?.toString(),
         thrust: engines?.[0]?.thrust?.toString(),
 
@@ -64,7 +71,13 @@ export const mapFrontendToBackend = (threat: ThreatData): {
         num_of_stages: threat.stages ? parseInt(threat.stages) : 1,
         family_type: threat.countries,
         explosive_type: threat.warhead,
-        flight_logic_file_name: threat.flightProfile
+        flight_logic_file_name: threat.flightProfile,
+        description: threat.description,
+        status: threat.status,
+        year: threat.year,
+        manufacturer: threat.manufacturer,
+        color: threat.color,
+        content_rv_file_name: threat.rvDesignName
     };
 
     const weightAndSize: any[] = [];

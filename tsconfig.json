@@ -19,13 +19,19 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "paths": {
+      "@backend/*": [
+        "../backend/src/*"
+      ]
+    },
     "baseUrl": "./src",
     "types": [
       "vite/client"
     ]
   },
   "include": [
-    "src"
+    "src",
+    "../backend/src/models"
   ],
   "exclude": [
     "node_modules"

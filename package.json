@@ -19,7 +19,8 @@
     "react-leaflet": "^4.2.1",
     "react-map-gl": "^6.1.20",
     "react-virtualized-auto-sizer": "^2.0.2",
-    "react-window": "^2.2.5"
+    "react-window": "^2.2.5",
+    "recharts": "^3.7.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
