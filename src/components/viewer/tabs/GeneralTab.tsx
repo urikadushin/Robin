@@ -1,96 +1,83 @@
 import React from 'react';
-import { FullMissileData } from '../../../../../../backend/src/models/FullMissileModel';
+import { FullMissileData } from '../../../../../backend/src/models/FullMissileModel';
+import { WeightAndSize } from '../../../../../backend/src/models/WeightAndSizeModel';
+import { ThreatImage } from '../../../../../backend/src/models/EngineeringModels';
+import { ImageCarousel } from '../ImageCarousel';
 
 interface GeneralTabProps {
     threat: FullMissileData;
+    layout?: 'default' | 'visual' | 'data';
 }
 
-export const GeneralTab: React.FC<GeneralTabProps> = ({ threat }) => {
-    const { performance = [] } = threat;
+export const GeneralTab: React.FC<GeneralTabProps> = ({ threat, layout = 'default' }) => {
+    const { images = [], weightAndSize = [] } = threat;
 
-    // Find max range from performance data
-    const maxRng = performance.length > 0 ? Math.max(...performance.map(p => p.rng || 0)) : 0;
+    const getVal = (genName: string) => {
+        const item = weightAndSize.find((w: WeightAndSize) => w.generic_name === genName);
+        return item ? item.property_value : null;
+    };
 
-    return (
-        <div className="grid grid-cols-12 gap-8 h-full">
+    // Filter images relevant for Structure view (Executive Summary or Physical Data)
+    const structureImages = images.filter((img: ThreatImage) =>
+        img.image_type === 'executiveSummary' ||
+        img.image_type === 'physicalData'
+    );
 
-            {/* Left Column: Capabilities & Text Details */}
-            <div className="col-span-7 flex flex-col gap-8">
+    const isTacticalData = layout === 'data';
+    const isTacticalVisual = layout === 'visual';
 
-                {/* Capabilities Section */}
-                <section>
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Capabilities</h3>
-                    <div className="bg-sky-50 rounded-xl p-6 border border-sky-100">
-                        <ul className="space-y-2">
-                            {threat.capability?.is_lofted && (
-                                <li className="flex items-center gap-2 text-slate-700">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-                                    Capable of Lofted Trajectory
-                                </li>
-                            )}
-                            {threat.capability?.is_decoy && (
-                                <li className="flex items-center gap-2 text-slate-700">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-                                    Deploys Decoys
-                                </li>
-                            )}
-                            {/* Fallback if no specific capabilities are true */}
-                            {(!threat.capability || (!threat.capability.is_lofted && !threat.capability.is_decoy)) && (
-                                <li className="text-slate-500 italic">No specific capabilities listed</li>
-                            )}
-                        </ul>
-                    </div>
-                </section>
-
-                {/* Details / Description Section */}
-                <section>
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Details</h3>
-                    <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed">
-                        <p>
-                            {threat.missile.description || "No description available for this threat."}
-                        </p>
-                        {/* Placeholder for extended text if available */}
-                        <p className="mt-4">
-                            The {threat.missile.name} is a {threat.missile.type} system developed by {threat.missile.country || 'Unknown'}.
-                            Detailed analysis of its performance indicates a maximum range of approximately {maxRng > 0 ? maxRng : 'Unknown'} km.
-                            It utilizes a {threat.engine?.type || 'standard'} propulsion system.
-                        </p>
-                    </div>
-                </section>
+    if (isTacticalVisual) {
+        return (
+            <div className="w-full h-full flex flex-col p-4 animate-in zoom-in duration-500 bg-white rounded-[12px] shadow-sm">
+                <ImageCarousel images={structureImages} missileName={threat.missile.name} />
             </div>
+        );
+    }
 
-            {/* Right Column: Gallery / Structure Image */}
-            <div className="col-span-5">
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 h-full flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-800 mb-2 text-center">{threat.missile.name} Structure</h3>
-                    <p className="text-sm text-slate-400 text-center mb-6">Description regarding this specific picture if needed</p>
-
-                    <div className="flex-1 flex items-center justify-center bg-slate-50 rounded-xl relative overflow-hidden group">
-                        {/* Placeholder for actual image */}
-                        <div className="text-slate-300 flex flex-col items-center">
-                            <svg className="w-24 h-24 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span>No Structure Image</span>
-                        </div>
-
-                        {/* Carousel Controls Placeholders */}
-                        <button className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
-                            ←
-                        </button>
-                        <button className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
-                            →
-                        </button>
-                    </div>
-
-                    <div className="flex justify-center gap-2 mt-6">
-                        {[1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className={`w-2 h-2 rounded-full ${i === 1 ? 'bg-sky-500' : 'bg-slate-200'}`}></div>
+    if (isTacticalData) {
+        return (
+            <div className="flex flex-col gap-10 animate-in slide-in-from-right duration-500" style={{ fontFamily: "'Open Sans', sans-serif" }}>
+                {/* Identification Widget */}
+                <div className="border border-[#C7D8E6] bg-white p-6 rounded-[12px] relative overflow-hidden group shadow-sm">
+                    <div className="absolute top-0 right-0 p-3 text-[9px] font-bold text-[#C7D8E6] uppercase select-none">ID_SECURLY_VERIFIED</div>
+                    <h3 className="text-[12px] font-extrabold text-[#03879E] uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 bg-[#03879E] rounded-full shadow-[0_2px_6px_rgba(3,135,158,0.3)]"></span>
+                        Entity Identification
+                    </h3>
+                    <div className="grid grid-cols-2 gap-y-6 gap-x-8">
+                        {[
+                            { label: 'Name', value: threat.missile.name },
+                            { label: 'Type', value: threat.missile.type },
+                            { label: 'Status', value: threat.missile.status || 'OPERATIONAL' },
+                            { label: 'Origin', value: getVal('origin') || threat.missile.family_type || 'GLOBAL' },
+                            { label: 'Manufacturer', value: threat.missile.manufacturer || 'CLASSIFIED' },
+                            { label: 'Year', value: threat.missile.year },
+                        ].map((item, idx) => (
+                            <div key={idx} className="flex flex-col gap-1 border-l-2 border-[#ECF2F6] pl-4 hover:border-[#03879E] transition-colors">
+                                <span className="text-[10px] text-[#464C53] uppercase font-bold tracking-wider">{item.label}</span>
+                                <span className="text-[15px] text-[#21133B] font-extrabold uppercase">{item.value || 'N/A'}</span>
+                            </div>
                         ))}
                     </div>
                 </div>
-            </div>
 
+                {/* Description Widget */}
+                <div className="border border-[#C7D8E6] bg-white p-6 rounded-[12px] group shadow-sm">
+                    <h3 className="text-[12px] font-extrabold text-[#747E8B] uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 bg-[#C7D8E6] rounded-full"></span>
+                        Asset Intelligence
+                    </h3>
+                    <p className="text-[14px] text-[#464C53] leading-relaxed font-semibold italic border-l-2 border-[#ECF2F6] pl-4">
+                        {threat.missile.description || "No tactical description available for this asset. System is awaiting intelligence update."}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full h-full flex flex-col gap-8 bg-white p-8 rounded-[12px] border border-[#C7D8E6] shadow-sm">
+            <ImageCarousel images={structureImages} missileName={threat.missile.name} />
         </div>
     );
 };

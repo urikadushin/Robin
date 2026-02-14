@@ -1,78 +1,81 @@
 import React from 'react';
-import { FullMissileData } from '../../../../../../backend/src/models/FullMissileModel';
+import { FullMissileData } from '../../../../../backend/src/models/FullMissileModel';
+import { WeightAndSize } from '../../../../../backend/src/models/WeightAndSizeModel';
 
 interface TechTabProps {
     threat: FullMissileData;
 }
 
 export const TechTab: React.FC<TechTabProps> = ({ threat }) => {
-    const { missile, engine, weightAndSize } = threat;
-    const ws = weightAndSize && weightAndSize.length > 0 ? weightAndSize[0] : null;
+    const { missile, engine, weightAndSize = [] } = threat;
 
-    const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 h-full">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">{title}</h3>
-            <div className="space-y-3">
+    const getVal = (genName: string) => {
+        const item = weightAndSize.find((w: WeightAndSize) => w.generic_name === genName);
+        return item ? item.property_value : null;
+    };
+
+    const Section = ({ title, icon_color, children }: { title: string, icon_color: string, children: React.ReactNode }) => (
+        <div className="border border-[#C7D8E6] bg-white p-6 rounded-[12px] h-full hover:border-[#03879E]/40 transition-all group relative overflow-hidden shadow-sm">
+            <div className="absolute top-0 right-0 p-3 text-[9px] font-bold text-[#C7D8E6] uppercase select-none group-hover:text-[#464C53] transition-colors">AODS_TECH_V1.0</div>
+            <h3 className={`text-[12px] font-extrabold uppercase tracking-widest mb-6 flex items-center gap-2 ${icon_color}`}>
+                <span className={`w-2.5 h-2.5 rounded-full shadow-[0_2px_6px_rgba(3,135,158,0.3)] ${icon_color.replace('text-', 'bg-')}`}></span>
+                {title}
+            </h3>
+            <div className="space-y-4">
                 {children}
             </div>
         </div>
     );
 
-    const Row = ({ label, value, unit }: { label: string, value: string | number | undefined | boolean, unit?: string }) => (
-        <div className="flex justify-between items-center py-1">
-            <span className="text-slate-500 text-sm font-medium">{label}</span>
-            <span className="text-slate-700 font-semibold text-sm">
-                {value === true ? 'Yes' : value === false ? 'No' : value || '-'}
-                {unit && value ? <span className="ml-1 text-slate-400 text-xs font-normal">{unit}</span> : ''}
+    const Row = ({ label, value, unit }: { label: string, value: string | number | undefined | boolean | null, unit?: string }) => (
+        <div className="flex justify-between items-center py-2.5 border-b border-[#ECF2F6] last:border-0 group/row">
+            <span className="text-[#747E8B] text-[10px] uppercase font-bold tracking-wider group-hover/row:text-[#464C53] transition-colors">{label}</span>
+            <span className="text-[#21133B] text-[14px] font-extrabold flex items-center gap-1">
+                {value === true ? 'TRUE' : value === false ? 'FALSE' : value || '---'}
+                {unit && value && <span className="text-[10px] font-bold text-[#747E8B] uppercase ml-1">{unit}</span>}
             </span>
         </div>
     );
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full overflow-y-auto">
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-10 animate-in fade-in duration-700" style={{ fontFamily: "'Open Sans', sans-serif" }}>
             {/* Physical Dimensions */}
-            <Section title="Physical Dimensions">
-                <Row label="Length" value={ws?.length || missile.length} unit="m" />
-                <Row label="Diameter" value={ws?.diameter || missile.diameter} unit="m" />
-                <Row label="Span" value={ws?.span} unit="m" />
-                <Row label="Launch Weight" value={ws?.weight || missile.launch_weight} unit="kg" />
-                <Row label="Payload Weight" value={missile.payload_weight} unit="kg" />
-                <Row label="Stage Count" value={ws?.stage_number} />
+            <Section title="Structural Geometry" icon_color="text-[#03879E]">
+                <Row label="Total Length" value={getVal('totalLength')} unit="M" />
+                <Row label="Body Diameter" value={getVal('d')} unit="M" />
+                <Row label="Weapon Span" value={getVal('span')} unit="M" />
+                <Row label="Launch Mass" value={getVal('launchWeight')} unit="KG" />
+                <Row label="Payload Mass" value={getVal('wh_weight')} unit="KG" />
+                <Row label="Section Count" value={getVal('stage_number') || missile.num_of_stages} />
             </Section>
 
             {/* Propulsion System */}
-            <Section title="Propulsion">
-                <Row label="Engine Type" value={engine?.type} />
-                <Row label="Thrust" value={engine?.thrust} unit="kN" />
-                <Row label="ISP" value={engine?.isp0} unit="s" />
-                <Row label="Burn Time" value={engine?.tburn} unit="s" />
-                <Row label="Propellant Mass" value={engine?.mass_propelant} unit="kg" />
+            <Section title="Propulsion Matrix" icon_color="text-[#464C53]">
+                <Row label="Motor Variant" value={engine?.type || 'STANDARD'} />
+                <Row label="Nominal Thrust" value={engine?.thrust} unit="KN" />
+                <Row label="Spec Impulse" value={engine?.isp0} unit="SEC" />
+                <Row label="Activation Lvl" value={engine?.tburn} unit="SEC" />
+                <Row label="Propellant Mass" value={engine?.mass_propelant} unit="KG" />
+                <Row label="Burn Profile" value={engine?.thrust_profile_file_name ? 'AVAILABLE' : 'INTERNAL'} />
             </Section>
 
-            {/* Guidance & Control (Placeholder fields based on generic model) */}
-            <Section title="Guidance & Control">
-                <Row label="Guidance Type" value={missile.accuracy ? "INS/GPS" : "Unknown"} />
-                <Row label="Accuracy (CEP)" value={missile.accuracy} unit="m" />
-                <Row label="Steerable" value="Yes" />
-                <Row label="Terminal Homing" value="N/A" />
+            {/* Systems & Logic */}
+            <Section title="Logic & Avionics" icon_color="text-[#464C53]">
+                <Row label="Guidance Mode" value={getVal('accuracy') ? "INS / GPS / TERCOM" : "INERTIAL"} />
+                <Row label="Accuracy CEP" value={getVal('accuracy')} unit="M" />
+                <Row label="Lofted Logic" value={threat.capability?.is_lofted} />
+                <Row label="Decoy System" value={threat.capability?.is_decoy} />
+                <Row label="Burst Debris" value={threat.capability?.is_burning_debris} />
             </Section>
 
-            {/* Warhead */}
-            <Section title="Warhead">
-                <Row label="Type" value="HE / Chemical / Nuclear" />
-                <Row label="Weight" value={missile.payload_weight} unit="kg" />
-                <Row label="Fuse Type" value="Impact / Proximity" />
+            {/* Warhead & Effects */}
+            <Section title="Effectors / Warhead" icon_color="text-[#F1307D]">
+                <Row label="Explosive Class" value={missile.explosive_type || 'CONVENTIONAL'} />
+                <Row label="Net Expl. Mass" value={getVal('wh_weight')} unit="KG" />
+                <Row label="Fuse Matrix" value="MULTI-MODE" />
+                <Row label="Target Type" value={missile.family_type || 'SURFACE'} />
+                <Row label="Destruction Mod" value="OPTIMIZED" />
             </Section>
-
-            {/* Operational */}
-            <Section title="Operational">
-                <Row label="Country of Origin" value={missile.country} />
-                <Row label="Manufacturer" value={missile.manufacturer} />
-                <Row label="Service Entry" value={missile.year_entered_service} />
-                <Row label="Status" value="Operational" />
-            </Section>
-
         </div>
     );
 };

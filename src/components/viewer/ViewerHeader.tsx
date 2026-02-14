@@ -1,69 +1,75 @@
 import React from 'react';
-import { FullMissileData } from '../../../../../backend/src/models/FullMissileModel';
+import { FullMissileData } from '../../../../backend/src/models/FullMissileModel';
 
 interface ViewerHeaderProps {
     threat: FullMissileData;
+    variant?: 'default' | 'tactical';
 }
 
-export const ViewerHeader: React.FC<ViewerHeaderProps> = ({ threat }) => {
-    const { missile, performance = [], weightAndSize = [] } = threat;
-
-    const getVal = (genName: string) => {
-        const item = weightAndSize.find(w => w.generic_name === genName);
-        return item ? item.property_value : null;
-    };
-
-    // Find max metrics from performance data
-    const maxRng = performance.length > 0 ? Math.max(...performance.map(p => p.rng || 0)) : 0;
-    const maxVel = performance.length > 0 ? Math.max(...performance.map(p => p.velEndOfBurn || 0)) : 0;
+export const ViewerHeader: React.FC<ViewerHeaderProps> = ({ threat, variant = 'default' }) => {
+    const { performance = [], weightAndSize = [] } = threat;
+    const isTactical = variant === 'tactical';
 
     const MetricItem = ({ label, value, unit }: { label: string, value: string | number | null | undefined, unit?: string }) => (
-        <div className="flex flex-col gap-1 pr-12 border-r border-slate-100 last:border-0 last:pr-0">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</span>
-            <span className="text-lg font-bold text-slate-700">
-                {value ?? '-'} <span className="text-sm font-normal text-slate-500">{unit}</span>
+        <div className={`flex flex-col gap-1 ${isTactical ? 'min-w-[140px]' : 'border-r border-slate-100 last:border-0 pr-8 last:pr-0'}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${isTactical ? 'text-[#464C53]' : 'text-slate-400'}`} style={{ fontFamily: "'Open Sans', sans-serif" }}>
+                {label}
             </span>
+            <div className="flex items-baseline gap-1">
+                <span className={`text-xl font-extrabold leading-tight ${isTactical ? 'text-[#03879E]' : 'text-slate-900'}`} style={{ fontFamily: "'Open Sans', sans-serif" }}>
+                    {value ?? '---'}
+                </span>
+                {unit && (
+                    <span className={`text-[10px] font-bold ${isTactical ? 'text-[#747E8B]' : 'text-slate-400'}`} >
+                        {unit}
+                    </span>
+                )}
+            </div>
         </div>
     );
 
     return (
-        <div className="flex flex-wrap items-center gap-y-4 bg-white/50 rounded-xl">
-            <MetricItem label="Origin" value={missile.country || 'Unknown'} />
+        <div className={`flex items-center ${isTactical ? 'justify-between' : 'gap-12'}`}>
             <MetricItem
-                label="Range"
-                value={getVal('maxRange') || (maxRng > 0 ? maxRng : null)}
-                unit="km"
+                label="Threat Type"
+                value={threat.missile.type}
+            />
+            <MetricItem
+                label="Origin"
+                value={threat.missile.origin}
+            />
+            <MetricItem
+                label="Max Range"
+                value={threat.missile.max_range}
+                unit="KM"
             />
             <MetricItem
                 label="Accuracy"
-                value={missile.accuracy || 'to 50'}
-                unit="m"
+                value={threat.missile.accuracy ? `to ${threat.missile.accuracy}` : null}
+                unit="M"
             />
             <MetricItem
                 label="Velocity"
-                value={maxVel > 0 ? (maxVel / 340).toFixed(1) : null}
-                unit="mach"
+                value={threat.missile.velocity_mach}
+                unit="MACH"
             />
             <MetricItem
-                label="Mass"
-                value={getVal('launchWeight') || missile.launch_weight}
-                unit="kg"
+                label="Launch Weight"
+                value={threat.weightandsize?.launch_weight}
+                unit="T"
             />
             <MetricItem
                 label="Length"
-                value={getVal('totalLength') || missile.length}
-                unit="m"
+                value={threat.weightandsize?.length}
+                unit="M"
             />
-            <MetricItem
-                label="Diameter"
-                value={getVal('d') || missile.diameter}
-                unit="m"
-            />
-            <MetricItem
-                label="Warhead"
-                value={getVal('wh_weight') || missile.payload_weight}
-                unit="kg"
-            />
+            {threat.weightandsize?.diameter && (
+                <MetricItem
+                    label="Diameter"
+                    value={threat.weightandsize.diameter}
+                    unit="M"
+                />
+            )}
         </div>
     );
 };

@@ -382,11 +382,12 @@ function App() {
         <div style={{
           pointerEvents: 'auto',
           position: 'absolute',
-          top: 180,
+          top: 220, // Increased from 180 to clear FiltersBar
           right: 32,
           width: 'calc(100% - 32px)',
-          maxWidth: '700px'
+          maxWidth: '500px' // Increased slightly for better layout
         }}>
+
           <ResultsPanel
             threats={threats}
             rangeFilter={range}
@@ -616,8 +617,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
     backgroundColor: 'transparent',
     width: '100%',
     maxWidth: '450px',
-    height: 'calc(100vh - 200px)',
-    padding: '12px 0 20px',
+    height: 'calc(100vh - 240px)', // Adjusted for new top
+    padding: '0 0 20px', // Removed top padding as header is separate
     display: 'flex',
     flexDirection: 'column',
     position: 'relative',
@@ -626,6 +627,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
     marginLeft: 'auto',
     marginRight: '24px'
   };
+
 
   const buttonStyle: React.CSSProperties = {
     backgroundColor: 'var(--accent)',
@@ -653,11 +655,12 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
     width: '100%',
     maxWidth: '450px',
     backgroundColor: 'transparent',
-    padding: '12px 0',
+    padding: '0 0 16px', // Increased bottom padding
     pointerEvents: 'auto',
     marginLeft: 'auto',
     marginRight: '24px'
   };
+
 
   const headerStyle: React.CSSProperties = {
     display: 'flex',

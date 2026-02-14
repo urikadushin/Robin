@@ -1,15 +1,19 @@
 :root {
-  --bg: #f5f6f7;
-  --panel-bg: #ffffff;
-  --item-bg: #eaf7f9;
-  --text: #144a54;
-  --text-secondary: #6b788e;
-  --border: rgba(20, 74, 84, 0.15);
-  --accent: #227d8d;
-  --sidebar-bg: #154961;
-  --sidebar-icon: #ffffff;
-  --shadow: 0 4px 18px rgba(20, 74, 84, 0.08), 0 1.5px 6px rgba(20, 74, 84, 0.04);
-  --shadow-hover: 0 8px 32px rgba(20, 74, 84, 0.15), 0 3px 12px rgba(20, 74, 84, 0.08);
+  --bg: #ECF2F6;
+  --panel-bg: #FFFFFF;
+  --item-bg: #EFF6FB;
+  --text: #21133B;
+  --text-secondary: #464C53;
+  --border: #C7D8E6;
+  --accent: #03879E;
+  --accent-hover: #03778C;
+  --accent-selected: #026678;
+  --accent-rgb: 3, 135, 158;
+  --sidebar-bg: #21133B;
+  --sidebar-icon: #FFFFFF;
+  --shadow: 0 10px 20px rgba(0, 51, 107, 0.2);
+  --radius-btn: 4px;
+  --radius-card: 12px;
 }
 
 .dark-mode {
@@ -27,7 +31,7 @@
 }
 
 body {
-  font-family: system-ui, sans-serif;
+  font-family: 'Open Sans', system-ui, sans-serif;
   margin: 0;
   background: var(--bg);
   color: var(--text);
