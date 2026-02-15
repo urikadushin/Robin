@@ -22,7 +22,8 @@ export const ThreatViewer: React.FC<ThreatViewerProps> = ({ threat, onClose, onE
     const AODS = {
         mainDark: '#21133B',
         primaryTeal: '#03879E',
-        bgColor: '#ECF2F6',
+        primaryBlue: '#0066FF',
+        bgColor: '#F8F8F8',
         surfaceWhite: '#FFFFFF',
         textMain: '#21133B',
         textSecondary: '#464C53',
@@ -31,7 +32,7 @@ export const ThreatViewer: React.FC<ThreatViewerProps> = ({ threat, onClose, onE
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-[#ECF2F6] text-[#21133B] overflow-hidden animate-in fade-in duration-300 font-sans" style={{ fontFamily: "'Open Sans', sans-serif" }}>
+        <div className="fixed inset-0 z-[100] flex flex-col bg-[#F8F8F8] text-[#21133B] overflow-hidden animate-in fade-in duration-300 font-sans" style={{ fontFamily: "'Open Sans', sans-serif" }}>
             {/* Tactical Header Overlay - AeroDan Official Dark Header */}
             <div className="absolute top-0 left-0 right-0 z-50 pointer-events-none">
                 <div className="flex items-center justify-between px-10 py-4 bg-[#21133B] shadow-lg pointer-events-auto">

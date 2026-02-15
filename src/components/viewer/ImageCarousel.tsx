@@ -59,7 +59,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileNam
 
     return (
         <div className="flex-1 flex flex-col h-full" >
-            <div className="flex-1 flex items-center justify-center bg-slate-50 rounded-xl relative overflow-hidden group" >
+            <div className="flex-1 flex items-center justify-center bg-[#F8F8F8] rounded-[12px] relative overflow-hidden group border border-slate-100 shadow-sm" >
                 <img
                     src={getImageUrl(currentImage)}
                     alt={currentImage.image_description || missileName}
@@ -79,15 +79,17 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileNam
                         <>
                             <button
                                 onClick={prev}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all z-10 text-slate-600 font-bold"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all z-10 text-[#0066FF] border border-slate-100"
+                                title="Previous image"
                             >
-                                ←
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
                             </button>
                             < button
                                 onClick={next}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all z-10 text-slate-600 font-bold"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all z-10 text-[#0066FF] border border-slate-100"
+                                title="Next image"
                             >
-                                →
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
                             </button>
                         </>
                     )
@@ -102,13 +104,13 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileNam
                 }
             </div>
 
-            < div className="flex justify-center gap-2 mt-6" >
+            < div className="flex justify-center gap-2.5 mt-6" >
                 {
                     filteredImages.map((_, i) => (
                         <button
                             key={i}
                             onClick={() => setCurrentIndex(i)}
-                            className={`w-2 h-2 rounded-full transition-all ${i === currentIndex ? 'bg-sky-500 w-4' : 'bg-slate-200'
+                            className={`w-2 h-2 rounded-full transition-all duration-300 ${i === currentIndex ? 'bg-[#0066FF] scale-110' : 'bg-slate-300'
                                 }`}
                             title={`Go to image ${i + 1}`}
                         />

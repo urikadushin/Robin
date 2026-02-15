@@ -11,11 +11,17 @@ export const ViewerTabs: React.FC<ViewerTabsProps> = ({ activeTab, onTabChange, 
 
     const tabs = isTactical
         ? [
-            { id: 'general', label: 'GEN INFO' },
-            { id: 'tech', label: 'TECH VIEW' },
-            { id: 'performance', label: 'PERFORMANCE' },
-            { id: 'aero', label: 'AERODYNAMICS' },
-            { id: 'mass', label: 'MASS PROP' }
+            { id: 'general', label: 'General' },
+            { id: 'aero', label: 'Aero/Stability' },
+            { id: 'mass', label: 'Mass prop' },
+            { id: 'tech', label: 'Tech' },
+            { id: 'history', label: 'History' },
+            { id: 'performance', label: 'Performance' },
+            { id: 'launch', label: 'Launch Platform' },
+            { id: 'sensors', label: 'Sensors' },
+            { id: 'warhead', label: 'Warhead' },
+            { id: 'propulsion', label: 'Propulsion' },
+            { id: 'guidance', label: 'Guidance' }
         ]
         : [
             { id: 'general', label: 'General Information' },
@@ -33,13 +39,13 @@ export const ViewerTabs: React.FC<ViewerTabsProps> = ({ activeTab, onTabChange, 
                     className={`
                         py-4 text-[11px] font-bold uppercase tracking-widest transition-all relative
                         ${activeTab === tab.id
-                            ? (isTactical ? 'text-[#03879E]' : 'text-blue-600')
-                            : (isTactical ? 'text-[#464C53] hover:text-[#21133B]' : 'text-slate-400 hover:text-slate-600')}
+                            ? 'text-[#0066FF]'
+                            : 'text-[#333333] hover:text-[#000000]'}
                     `}
                 >
                     {tab.label}
                     {activeTab === tab.id && (
-                        <div className={`absolute bottom-0 left-0 right-0 h-1 ${isTactical ? 'bg-[#03879E]' : 'bg-blue-600'} rounded-t-full shadow-[0_-2px_6px_rgba(3,135,158,0.3)]`} />
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#0066FF] rounded-t-full shadow-[0_-2px_6px_rgba(0,102,255,0.3)]" />
                     )}
                 </button>
             ))}
