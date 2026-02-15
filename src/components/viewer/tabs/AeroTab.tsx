@@ -1,12 +1,12 @@
 import React from 'react';
-import { FullMissileData } from '../../../../../backend/src/models/FullMissileModel';
+import { FullMissileData } from '../../../../backend/src/models/FullMissileModel';
 
 interface AeroTabProps {
     threat: FullMissileData;
 }
 
 export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
-    const aero = threat.aero;
+    const aero = threat.aerodynamics?.[0];
 
     if (!aero) {
         return (
@@ -16,11 +16,11 @@ export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
         );
     }
 
-    const CoeffItem = ({ label, value, description }: { label: string, value: number | undefined, description: string }) => (
+    const CoeffItem = ({ label, value, description }: { label: string, value: string | number | undefined, description: string }) => (
         <div className="border border-[#C7D8E6] bg-white p-5 rounded-[12px] flex flex-col gap-3 group hover:border-[#03879E]/40 transition-all shadow-sm">
             <div className="flex items-center justify-between">
                 <span className="text-[11px] font-extrabold text-[#03879E] uppercase tracking-wider">{label}</span>
-                <span className="text-[18px] font-extrabold text-[#21133B]">{value?.toFixed(4) || '0.0000'}</span>
+                <span className="text-[18px] font-extrabold text-[#21133B]">{typeof value === 'number' ? value.toFixed(4) : value || '0.0000'}</span>
             </div>
             <p className="text-[10px] text-[#747E8B] leading-tight uppercase font-bold">{description}</p>
         </div>
@@ -34,12 +34,12 @@ export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
             </h3>
 
             <div className="grid grid-cols-3 gap-6">
-                <CoeffItem label="Cx0" value={aero.cx0} description="Zero-lift drag coefficient at reference Mach" />
-                <CoeffItem label="Cna" value={aero.cna} description="Normal force coefficient slope per degree alpha" />
-                <CoeffItem label="Xcp" value={aero.xcp_from_tip} description="Center of pressure location from missile tip (meters)" />
-                <CoeffItem label="CmQ" value={aero.cmq} description="Pitching moment derivative due to pitch rate" />
-                <CoeffItem label="Cma" value={aero.cma} description="Static stability margin / Pitching moment slope" />
-                <CoeffItem label="Cnd" value={aero.cnd} description="Normal force due to control surface deflection" />
+                <CoeffItem label="Cx0" value={aero.aero_cx0_off} description="Zero-lift drag coefficient at reference Mach" />
+                <CoeffItem label="Cna" value={aero.aero_cna} description="Normal force coefficient slope per degree alpha" />
+                <CoeffItem label="Xcp" value={aero.aero_xcp} description="Center of pressure location from missile tip (meters)" />
+                <CoeffItem label="CmQ" value={aero.aero_cmq} description="Pitching moment derivative due to pitch rate" />
+                <CoeffItem label="Cnd" value={aero.aero_cnd} description="Normal force due to control surface deflection" />
+                <CoeffItem label="Dim" value={aero.dim} description="Reference dimension (meters)" />
             </div>
 
             <div className="border border-[#C7D8E6] bg-white p-6 rounded-[12px] shadow-sm">

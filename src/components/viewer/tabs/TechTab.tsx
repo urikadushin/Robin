@@ -1,6 +1,6 @@
 import React from 'react';
-import { FullMissileData } from '../../../../../backend/src/models/FullMissileModel';
-import { WeightAndSize } from '../../../../../backend/src/models/WeightAndSizeModel';
+import { FullMissileData } from '../../../../backend/src/models/FullMissileModel';
+import { WeightAndSize } from '../../../../backend/src/models/WeightAndSizeModel';
 
 interface TechTabProps {
     threat: FullMissileData;

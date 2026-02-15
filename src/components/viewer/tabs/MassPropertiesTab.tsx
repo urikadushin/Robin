@@ -1,6 +1,6 @@
 import React from 'react';
-import { FullMissileData } from '../../../../../backend/src/models/FullMissileModel';
-import { MassMomentAndXCG } from '../../../../../backend/src/models/EngineeringModels';
+import { FullMissileData } from '../../../../backend/src/models/FullMissileModel';
+import { MassMomentAndXCG } from '../../../../backend/src/models/EngineeringModels';
 
 interface MassPropertiesTabProps {
     threat: FullMissileData;

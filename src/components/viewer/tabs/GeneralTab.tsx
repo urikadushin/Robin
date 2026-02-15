@@ -1,7 +1,7 @@
 import React from 'react';
-import { FullMissileData } from '../../../../../backend/src/models/FullMissileModel';
-import { WeightAndSize } from '../../../../../backend/src/models/WeightAndSizeModel';
-import { ThreatImage } from '../../../../../backend/src/models/EngineeringModels';
+import { FullMissileData } from '../../../../backend/src/models/FullMissileModel';
+import { WeightAndSize } from '../../../../backend/src/models/WeightAndSizeModel';
+import { ThreatImage } from '../../../../backend/src/models/EngineeringModels';
 import { ImageCarousel } from '../ImageCarousel';
 
 interface GeneralTabProps {
@@ -26,10 +26,29 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ threat, layout = 'defaul
     const isTacticalData = layout === 'data';
     const isTacticalVisual = layout === 'visual';
 
+    const summaryUrl = threat.missile.executive_summary_file_name
+        ? `http://localhost:3000/api/data/ExecutiveSummary/${threat.missile.executive_summary_file_name}`
+        : null;
+
     if (isTacticalVisual) {
         return (
-            <div className="w-full h-full flex flex-col p-4 animate-in zoom-in duration-500 bg-white rounded-[12px] shadow-sm">
-                <ImageCarousel images={structureImages} missileName={threat.missile.name} />
+            <div className="w-full h-full flex flex-col gap-6 p-4 animate-in zoom-in duration-500 bg-white rounded-[12px] shadow-sm overflow-hidden">
+                <div className="flex-1 min-h-[400px]">
+                    <ImageCarousel images={structureImages} missileName={threat.missile.name} />
+                </div>
+                {summaryUrl && (
+                    <div className="flex-1 border-t border-[#ECF2F6] pt-6 flex flex-col h-full min-h-[500px]">
+                        <h3 className="text-[11px] font-extrabold text-[#747E8B] uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 bg-[#03879E] rounded-full"></span>
+                            Executive Summary Intelligence
+                        </h3>
+                        <iframe
+                            src={summaryUrl}
+                            className="w-full flex-1 border-none rounded-lg bg-slate-50"
+                            title="Executive Summary"
+                        />
+                    </div>
+                )}
             </div>
         );
     }
@@ -76,8 +95,24 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ threat, layout = 'defaul
     }
 
     return (
-        <div className="w-full h-full flex flex-col gap-8 bg-white p-8 rounded-[12px] border border-[#C7D8E6] shadow-sm">
-            <ImageCarousel images={structureImages} missileName={threat.missile.name} />
+        <div className="w-full h-full flex flex-col gap-8 bg-white p-8 rounded-[12px] border border-[#C7D8E6] shadow-sm overflow-hidden">
+            <div className="flex-1 min-h-[400px]">
+                <ImageCarousel images={structureImages} missileName={threat.missile.name} />
+            </div>
+            {summaryUrl && (
+                <div className="flex-1 border-t border-[#ECF2F6] pt-8 flex flex-col min-h-[600px]">
+                    <h3 className="text-[12px] font-extrabold text-[#21133B] uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 bg-[#03879E] rounded-full"></span>
+                        Strategic Executive Summary
+                    </h3>
+                    <iframe
+                        src={summaryUrl}
+                        className="w-full flex-1 border-none rounded-lg bg-slate-50"
+                        title="Strategic Summary"
+                    />
+                </div>
+            )}
         </div>
     );
 };
+

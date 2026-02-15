@@ -2,8 +2,8 @@ import React from 'react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { FullMissileData } from '../../../../../backend/src/models/FullMissileModel';
-import { Performance } from '../../../../../backend/src/models/EngineeringModels';
+import { FullMissileData } from '../../../../backend/src/models/FullMissileModel';
+import { Performance } from '../../../../backend/src/models/EngineeringModels';
 
 interface PerformanceTabProps {
     threat: FullMissileData;
