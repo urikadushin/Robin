@@ -16,7 +16,7 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({ threat, variant = 'd
                 {label}
             </span>
             <div className="flex items-baseline gap-1">
-                <span className={`text-xl font-extrabold leading-tight ${isTactical ? 'text-[#03879E]' : 'text-slate-900'}`} style={{ fontFamily: "'Open Sans', sans-serif" }}>
+                <span className={`text-xl font-extrabold leading-tight ${isTactical ? 'text-[#0066FF]' : 'text-slate-900'}`} style={{ fontFamily: "'Open Sans', sans-serif" }}>
                     {value ?? '---'}
                 </span>
                 {unit && (
