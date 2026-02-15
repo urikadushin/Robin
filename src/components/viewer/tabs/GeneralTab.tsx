@@ -10,12 +10,7 @@ interface GeneralTabProps {
 }
 
 export const GeneralTab: React.FC<GeneralTabProps> = ({ threat, layout = 'default' }) => {
-    const { images = [], weightAndSize = [] } = threat;
-
-    const getVal = (genName: string) => {
-        const item = weightAndSize.find((w: WeightAndSize) => w.generic_name === genName);
-        return item ? item.property_value : null;
-    };
+    const { images = [], weightAndSize = [], performance = [] } = threat;
 
     // Filter images relevant for Structure view (Executive Summary or Physical Data)
     const structureImages = images.filter((img: ThreatImage) =>
@@ -30,89 +25,100 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ threat, layout = 'defaul
         ? `http://localhost:3000/api/data/ExecutiveSummary/${threat.missile.executive_summary_file_name}`
         : null;
 
+    const CapabilityItem = ({ label, active }: { label: string, active?: boolean }) => (
+        <div className="flex items-center justify-between py-3 border-b border-dashed border-slate-200 last:border-0 group">
+            <span className="text-[14px] font-medium text-[#475569]">
+                {label}
+            </span>
+            <div className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-300 ${active
+                ? 'bg-[#E0F2FE] text-[#227d8d]'
+                : 'bg-slate-100 text-slate-400'
+                }`}>
+                {active ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M18 12H6" /></svg>
+                )}
+            </div>
+        </div>
+    );
+
     if (isTacticalVisual) {
         return (
-            <div className="w-full h-full flex flex-col gap-6 p-4 animate-in zoom-in duration-500 bg-white rounded-[12px] shadow-sm overflow-hidden">
-                <div className="flex-1 min-h-[400px]">
+            <div className="w-full bg-white animate-in fade-in duration-500">
+                <div className="flex flex-col min-h-0 bg-white">
                     <ImageCarousel images={structureImages} missileName={threat.missile.name} />
                 </div>
-                {summaryUrl && (
-                    <div className="flex-1 border-t border-[#ECF2F6] pt-6 flex flex-col h-full min-h-[500px]">
-                        <h3 className="text-[11px] font-extrabold text-[#747E8B] uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 bg-[#03879E] rounded-full"></span>
-                            Executive Summary Intelligence
-                        </h3>
-                        <iframe
-                            src={summaryUrl}
-                            className="w-full flex-1 border-none rounded-lg bg-slate-50"
-                            title="Executive Summary"
-                        />
-                    </div>
-                )}
             </div>
         );
     }
 
     if (isTacticalData) {
         return (
-            <div className="flex flex-col gap-10 animate-in slide-in-from-right duration-500" style={{ fontFamily: "'Open Sans', sans-serif" }}>
-                {/* Identification Widget */}
-                <div className="border border-[#C7D8E6] bg-white p-6 rounded-[12px] relative overflow-hidden group shadow-sm">
-                    <div className="absolute top-0 right-0 p-3 text-[9px] font-bold text-[#C7D8E6] uppercase select-none">ID_SECURLY_VERIFIED</div>
-                    <h3 className="text-[12px] font-extrabold text-[#03879E] uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 bg-[#03879E] rounded-full shadow-[0_2px_6px_rgba(3,135,158,0.3)]"></span>
-                        Entity Identification
-                    </h3>
-                    <div className="grid grid-cols-2 gap-y-6 gap-x-8">
-                        {[
-                            { label: 'Name', value: threat.missile.name },
-                            { label: 'Type', value: threat.missile.type },
-                            { label: 'Status', value: threat.missile.status || 'OPERATIONAL' },
-                            { label: 'Origin', value: getVal('origin') || threat.missile.family_type || 'GLOBAL' },
-                            { label: 'Manufacturer', value: threat.missile.manufacturer || 'CLASSIFIED' },
-                            { label: 'Year', value: threat.missile.year },
-                        ].map((item, idx) => (
-                            <div key={idx} className="flex flex-col gap-1 border-l-2 border-[#ECF2F6] pl-4 hover:border-[#03879E] transition-colors">
-                                <span className="text-[10px] text-[#464C53] uppercase font-bold tracking-wider">{item.label}</span>
-                                <span className="text-[15px] text-[#21133B] font-extrabold uppercase">{item.value || 'N/A'}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+            <div className="w-full animate-in fade-in duration-500" style={{ fontFamily: "'Inter', sans-serif" }}>
 
-                {/* Description Widget */}
-                <div className="border border-[#C7D8E6] bg-white p-6 rounded-[12px] group shadow-sm">
-                    <h3 className="text-[12px] font-extrabold text-[#747E8B] uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 bg-[#C7D8E6] rounded-full"></span>
-                        Asset Intelligence
-                    </h3>
-                    <p className="text-[14px] text-[#464C53] leading-relaxed font-semibold italic border-l-2 border-[#ECF2F6] pl-4">
-                        {threat.missile.description || "No tactical description available for this asset. System is awaiting intelligence update."}
-                    </p>
+                {/* Single Card Content Layout (Container provided by ThreatViewer) */}
+                <div className="flex flex-col lg:flex-row">
+
+                    {/* Left Side: Capabilities & Exec Summary */}
+                    <div className="flex-[1.6] flex flex-col gap-8 pr-4 lg:pr-8">
+
+                        {/* Capabilities Section */}
+                        <div className="flex flex-col gap-4">
+                            <h3 className="text-[14px] font-bold text-[#6b788e] uppercase tracking-widest">
+                                Capabilities
+                            </h3>
+                            <div className="grid grid-cols-1 gap-y-3">
+                                {threat.missile.mirv && <CapabilityItem label="Separation Threats" active={true} />}
+                                {threat.missile.maneuverable && <CapabilityItem label="Maneuverable" active={true} />}
+                                {threat.missile.decoys && <CapabilityItem label="Decoys" active={true} />}
+                                {threat.missile.nuclear_capable && <CapabilityItem label="Nuclear Capable" active={true} />}
+                                {threat.missile.hypersonic && <CapabilityItem label="Hypersonic" active={true} />}
+                                {threat.missile.terminal_maneuver && <CapabilityItem label="Terminal Maneuver" active={true} />}
+                                {/* Fallback if no capabilities are active */}
+                                {!threat.missile.mirv && !threat.missile.maneuverable && !threat.missile.decoys &&
+                                    !threat.missile.nuclear_capable && !threat.missile.hypersonic && !threat.missile.terminal_maneuver && (
+                                        <div className="text-sm text-gray-400 italic">No specific capabilities listed.</div>
+                                    )}
+                            </div>
+                        </div>
+
+                        {/* Executive Summary Section */}
+                        <div className="flex flex-col gap-4 w-full">
+                            <h3 className="text-[14px] font-bold text-[#6b788e] uppercase tracking-widest">
+                                Executive Summary Intelligence
+                            </h3>
+                            {summaryUrl ? (
+                                <iframe
+                                    src={summaryUrl}
+                                    className="w-full min-h-[600px] border border-[#E2E8F0] rounded-[6px] shadow-sm bg-slate-50"
+                                    title="Executive Summary"
+                                />
+                            ) : (
+                                <div className="p-8 text-center text-[#6b788e] italic bg-slate-50 rounded-[6px] border border-dashed border-slate-200">
+                                    No Executive Summary available.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Vertical Separator (only on large screens) */}
+                    <div className="hidden lg:block w-[1px] bg-[#E2E8F0] my-2"></div>
+
+                    {/* Right Side: Image Carousel */}
+                    <div className="flex-1 lg:pl-12 flex flex-col py-8 min-h-[500px]">
+                        <div className="w-full flex-1 flex flex-col">
+                            <ImageCarousel
+                                images={isTacticalVisual ? structureImages : [...structureImages, ...(images || [])]}
+                                missileName={threat.missile.name}
+                            />
+                        </div>
+                    </div>
+
                 </div>
             </div>
         );
     }
 
-    return (
-        <div className="w-full h-full flex flex-col gap-8 bg-white p-8 rounded-[12px] border border-[#C7D8E6] shadow-sm overflow-hidden">
-            <div className="flex-1 min-h-[400px]">
-                <ImageCarousel images={structureImages} missileName={threat.missile.name} />
-            </div>
-            {summaryUrl && (
-                <div className="flex-1 border-t border-[#ECF2F6] pt-8 flex flex-col min-h-[600px]">
-                    <h3 className="text-[12px] font-extrabold text-[#21133B] uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 bg-[#03879E] rounded-full"></span>
-                        Strategic Executive Summary
-                    </h3>
-                    <iframe
-                        src={summaryUrl}
-                        className="w-full flex-1 border-none rounded-lg bg-slate-50"
-                        title="Strategic Summary"
-                    />
-                </div>
-            )}
-        </div>
-    );
+    return null;
 };
-

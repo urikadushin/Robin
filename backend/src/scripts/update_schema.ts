@@ -20,7 +20,15 @@ async function updateSchema() {
             'ADD COLUMN status VARCHAR(50)',
             'ADD COLUMN year INT',
             'ADD COLUMN manufacturer VARCHAR(100)',
-            'ADD COLUMN color VARCHAR(20)'
+            'ADD COLUMN color VARCHAR(20)',
+            'ADD COLUMN origin VARCHAR(50)',
+            'ADD COLUMN mirv BOOLEAN DEFAULT FALSE',
+            'ADD COLUMN maneuverable BOOLEAN DEFAULT FALSE',
+            'ADD COLUMN decoys BOOLEAN DEFAULT FALSE',
+            'ADD COLUMN nuclear_capable BOOLEAN DEFAULT FALSE',
+            'ADD COLUMN hypersonic BOOLEAN DEFAULT FALSE',
+            'ADD COLUMN terminal_maneuver BOOLEAN DEFAULT FALSE',
+            'ADD COLUMN slv_capable BOOLEAN DEFAULT FALSE'
         ];
 
         // Check which columns already exist to avoid errors

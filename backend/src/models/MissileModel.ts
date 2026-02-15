@@ -14,4 +14,12 @@ export interface Missile {
     year?: number;
     manufacturer?: string;
     color?: string;
+    // Capabilities
+    mirv?: boolean;
+    maneuverable?: boolean;
+    decoys?: boolean;
+    nuclear_capable?: boolean;
+    hypersonic?: boolean;
+    terminal_maneuver?: boolean;
+    slv_capable?: boolean;
 }

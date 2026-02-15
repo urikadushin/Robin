@@ -13,7 +13,7 @@ async function restore() {
 
     try {
         const connection = await mysql.createConnection(config);
-        const sqlPath = 'C:\\Users\\Omris\\Downloads\\createMySqlRobinDB.sql';
+        const sqlPath = 'c:\\URI\\ALUMA\\createMySqlRobinDB.sql';
 
         console.log(`Reading SQL from: ${sqlPath}`);
         const sql = fs.readFileSync(sqlPath, 'utf8');
