@@ -38,26 +38,26 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({ threat, variant = 'd
         if (item) return (item as any).property_value;
 
         // 3. Last fallback: Check weightAndSize (sometimes data is duplicated there)
-        const wsItem = weightAndSize.find((w: any) => w.generic_name === propertyName || w.generic_name === 'max_range');
+        const wsItem = weightAndSize.find((w: any) => w.generic_name === propertyName || (propertyName === 'max_range' && w.generic_name === 'maxRange'));
         return wsItem ? wsItem.property_value : null;
     };
 
-    const getSizeValue = (genericName: string) => {
-        const item = weightAndSize.find((w: any) => w.generic_name === genericName);
+    const getSizeValue = (genericNames: string[]) => {
+        const item = weightAndSize.find((w: any) => genericNames.includes(w.generic_name));
         return item ? item.property_value : null;
     };
 
     return (
         <div className="flex items-center justify-between w-full h-full">
             <div className="flex items-center gap-16">
-                <MetricItem label="Origin" value={getSizeValue('origin')} />
-                <MetricItem label="Range (km)" value={getPerformanceValue('max_range') || getSizeValue('max_range')} />
-                <MetricItem label="Accuracy (m)" value={getPerformanceValue('accuracy')} />
-                <MetricItem label="Velocity (mach)" value={getPerformanceValue('velocity_mach') || getSizeValue('velocity')} />
-                <MetricItem label="Mass (tonnes)" value={getSizeValue('launch_weight')} />
-                <MetricItem label="Length (m)" value={getSizeValue('length')} />
-                <MetricItem label="Diameter (m)" value={getSizeValue('diameter')} />
-                <MetricItem label="Warhead Weight (kg)" value={getSizeValue('warhead_weight') || '500-1500'} />
+                <MetricItem label="Origin" value={getSizeValue(['origin'])} />
+                <MetricItem label="Range (km)" value={getPerformanceValue('max_range') || getSizeValue(['maxRange', 'max_range'])} />
+                <MetricItem label="Accuracy (m)" value={getPerformanceValue('accuracy') || getSizeValue(['accuracy'])} />
+                <MetricItem label="Velocity (mach)" value={getPerformanceValue('velocity_mach') || getSizeValue(['velocity'])} />
+                <MetricItem label="Mass (tonnes)" value={getSizeValue(['launch_weight', 'weight', 'launchWeight'])} />
+                <MetricItem label="Length (m)" value={getSizeValue(['length', 'totalLength'])} />
+                <MetricItem label="Diameter (m)" value={getSizeValue(['diameter', 'd'])} />
+                <MetricItem label="Warhead Weight (kg)" value={getSizeValue(['warhead_weight', 'wh_weight'])} />
             </div>
         </div>
     );
