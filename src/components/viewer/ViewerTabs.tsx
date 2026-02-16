@@ -18,21 +18,21 @@ export const ViewerTabs: React.FC<ViewerTabsProps> = ({ activeTab, onTabChange }
     ];
 
     return (
-        <div className="flex items-center gap-10 border-b border-[#E2E8F0] mb-8" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="flex items-center gap-10 border-b border-[#E2E8F0] mb-8" style={{ fontFamily: "'Open Sans', sans-serif" }}>
             {tabs.map((tab) => (
                 <button
                     key={tab.id}
                     onClick={() => onTabChange(tab.id)}
                     className={`
-                        py-4 text-[13px] tracking-wide relative transition-all duration-200
+                        py-4 text-[14px] tracking-tight relative transition-all duration-200
                         ${activeTab === tab.id
-                            ? 'text-[#144a54] font-bold'
-                            : 'text-[#64748B] font-medium hover:text-[#144a54]'}
+                            ? 'text-[#03879E] font-bold'
+                            : 'text-[#464C53] font-semibold hover:text-[#03879E]'}
                     `}
                 >
                     {tab.label}
                     {activeTab === tab.id && (
-                        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#227d8d] rounded-t-sm shadow-[0_-2px_6px_rgba(34,125,141,0.2)]" />
+                        <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-[#03879E]" />
                     )}
                 </button>
             ))}
