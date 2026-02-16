@@ -85,19 +85,28 @@ export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName }) => {
             { id: 'S3', suffix: 'S3', label: 'Stage 3' },
         ];
 
-        // Check if missileName already contains underscore or if we should try both
-        return potentialParts.map(p => {
-            // Logic to handle Bulava_BT vs emadBT
-            // For robustness, in a real app we'd probe or be told, 
-            // but here let's use a heuristic or just provide the known working one for Bulava
-            const actualMissileName = missileName === 'bulava' ? 'Bulava_' : missileName;
+        // Normalizing missile names for 3D asset matching
+        const normalizedBase = nameLower.includes('shahed') ? 'shahed' :
+            (nameLower === 'bulava' ? 'Bulava_' : missileName);
 
-            return {
-                ...p,
-                url: `http://localhost:3000/api/data/3DModel/${actualMissileName}${p.suffix}.obj`
-            };
-        });
-    }, [missileName]);
+        // Heuristic: If it's a drone/UAV, it's likely a single 'UN' assembly or just Name.obj
+        const isSingleFileModel = nameLower.includes('shahed') || nameLower.includes('aim') || nameLower.includes('hellfire');
+
+        if (isSingleFileModel) {
+            // Only return the Unit assembly with the base name (no suffix)
+            return [{
+                id: 'UN',
+                suffix: '',
+                label: 'Unit Assembly',
+                url: `http://localhost:3000/api/data/3DModel/${normalizedBase}.obj`
+            }];
+        }
+
+        return potentialParts.map(p => ({
+            ...p,
+            url: `http://localhost:3000/api/data/3DModel/${normalizedBase}${p.suffix}.obj`
+        }));
+    }, [missileName, nameLower]);
 
     return (
         <div className="w-full h-full min-h-[500px] bg-[#f8fafc] rounded-[12px] border border-slate-200 relative overflow-hidden flex flex-col group">
@@ -117,7 +126,7 @@ export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName }) => {
             <div className="flex-1 bg-gradient-to-b from-slate-50 to-white">
                 <Canvas shadows dpr={[1, 2]}>
                     <Suspense fallback={<Loader />}>
-                        <PerspectiveCamera makeDefault position={[5, 5, 15]} fov={35} />
+                        <PerspectiveCamera makeDefault fov={35} />
                         <Stage environment="city" intensity={0.5}>
                             <group rotation={[0, 0, 0]}>
                                 {parts.map((p) => (
