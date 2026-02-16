@@ -1,5 +1,27 @@
 import { ThreatData } from '../App';
 
+const THREAT_PALETTE = [
+    '#03879E', // Teal (Brand)
+    '#F59E0B', // Amber
+    '#8B5CF6', // Purple
+    '#EC4899', // Pink
+    '#10B981', // Emerald
+    '#6366F1', // Indigo
+    '#F43F5E', // Rose
+    '#3B82F6', // Blue
+    '#84cc16', // Lime
+    '#f97316'  // Orange
+];
+
+const getDynamicColor = (name: string): string => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % THREAT_PALETTE.length;
+    return THREAT_PALETTE[index];
+};
+
 export const mapBackendToFrontend = (missile: any, weightAndSize: any[], aerodynamics: any[], performance: any[] = [], engines: any[] = []): ThreatData => {
     const getVal = (genName: string) => {
         const item = weightAndSize.find(w => w.generic_name === genName);
@@ -16,9 +38,11 @@ export const mapBackendToFrontend = (missile: any, weightAndSize: any[], aerodyn
     const maxVel = performance.length > 0 ? Math.max(...performance.map(p => p.velEndOfBurn || 0)) : 0;
     const maxAlt = performance.length > 0 ? Math.max(...performance.map(p => p.apogeeAlt || 0)) : 0;
 
+    const missileName = missile.name || 'Unknown Threat';
+
     return {
         id: missile.id.toString(),
-        name: missile.name,
+        name: missileName,
         range: getVal('maxRange') ? `${getVal('maxRange')} km` : (maxRng > 0 ? `${maxRng} km` : 'Unknown'),
         minRange: parseFloat(getVal('minRange') || '0'),
         maxRange: parseFloat(getVal('maxRange') || maxRng.toString() || '0'),
@@ -28,7 +52,7 @@ export const mapBackendToFrontend = (missile: any, weightAndSize: any[], aerodyn
         countries: missile.family_type || 'Unknown',
         manufacturer: missile.manufacturer || getVal('manufacturer') || 'Unknown',
         warhead: missile.explosive_type || 'Unknown',
-        color: missile.color || getVal('color') || '#ff6b6b',
+        color: missile.color || getVal('color') || getDynamicColor(missileName),
         missile: missile.type || 'Ballistic',
         status: missile.status || getVal('status') || 'Operational',
         year: missile.year ? missile.year : parseInt(getVal('year') || new Date().getFullYear().toString()),

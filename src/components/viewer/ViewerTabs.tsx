@@ -12,28 +12,25 @@ export const ViewerTabs: React.FC<ViewerTabsProps> = ({ activeTab, onTabChange }
         { id: 'structural', label: 'Structural View' },
         { id: 'tech', label: 'Tech View' },
         { id: 'rcs', label: 'RCS' },
+        { id: 'aero', label: 'Aero' },
         { id: 'performance', label: 'Performance' },
-        { id: 'flight', label: 'Flight Logic' },
-        { id: 'heat', label: 'Heat Transfer' },
+        { id: 'mass', label: 'Mass Properties' },
     ];
 
     return (
-        <div className="flex items-center gap-10 border-b border-[#E2E8F0] mb-8" style={{ fontFamily: "'Open Sans', sans-serif" }}>
+        <div className="flex items-end bg-[#F1F5F9] border-b border-[#E2E8F0] px-4 pt-4 -mx-10" style={{ fontFamily: "'Open Sans', sans-serif" }}>
             {tabs.map((tab) => (
                 <button
                     key={tab.id}
                     onClick={() => onTabChange(tab.id)}
                     className={`
-                        py-4 text-[14px] tracking-tight relative transition-all duration-200
+                        px-8 py-3 text-[14px] tracking-tight transition-all duration-200 whitespace-nowrap relative
                         ${activeTab === tab.id
-                            ? 'text-[#03879E] font-bold'
+                            ? 'bg-white text-[#03879E] font-bold border-t border-x border-[#E2E8F0] rounded-t-[10px] -mb-[1px] z-10'
                             : 'text-[#464C53] font-semibold hover:text-[#03879E]'}
                     `}
                 >
                     {tab.label}
-                    {activeTab === tab.id && (
-                        <div className="absolute bottom-[-1px] left-0 right-0 h-[3px] bg-[#03879E]" />
-                    )}
                 </button>
             ))}
         </div>

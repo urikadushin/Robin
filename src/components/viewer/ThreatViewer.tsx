@@ -8,6 +8,8 @@ import { PerformanceTab } from './tabs/PerformanceTab';
 import { TechTab } from './tabs/TechTab';
 import { AeroTab } from './tabs/AeroTab';
 import { MassPropertiesTab } from './tabs/MassPropertiesTab';
+import { RcsTab } from './tabs/RcsTab';
+import { ThreeDViewer } from './ThreeDViewer';
 
 interface ThreatViewerProps {
     threat: FullMissileData;
@@ -83,50 +85,40 @@ export const ThreatViewer: React.FC<ThreatViewerProps> = ({ threat, onClose, onE
                 </div>
             </div>
 
-            {/* Split View Container - Adaptive Width */}
-            <div className={`flex-1 flex overflow-hidden max-w-[2560px] mx-auto w-full px-8 pb-8 gap-8`}>
+            {/* Global Tabs Navigation - Full Width */}
+            <div className="px-8 pb-4">
+                <div className="bg-[#F1F5F9] rounded-t-[12px] border-t border-x border-[#E0E0E0] overflow-hidden">
 
-                {/* Data LEFT Panel (Tables, Specs) - Expands to full width for 'general' tab */}
-                <div className={`
-                    flex-1 h-full flex flex-col bg-white border-[1px] border-[#E0E0E0] rounded-[8px] relative overflow-hidden shadow-sm
-                    ${activeTab === 'general' ? 'col-span-2' : ''}
-                `}>
-                    {/* Metrics Bar - High Fidelity Surface (Hidden for 'general' as it is in the main header) */}
-                    {activeTab !== 'general' && (
-                        <div className="px-10 py-8 bg-white border-b border-[#E0E0E0]">
-                            <div className="max-w-[1400px]">
-                                <ViewerHeader threat={threat} variant="tactical" />
-                            </div>
-                        </div>
-                    )}
+                </div>
+            </div>
 
-                    {/* Tabs Navigation */}
-                    <div className="px-10 bg-white">
+            {/* Split View Container - Expanded to full width */}
+            <div className="flex-1 flex overflow-hidden max-w-[2560px] mx-auto w-full px-8 pb-8">
+
+                {/* Data Panel (Tables, Specs) - Now always full width */}
+                <div className="flex-1 h-full flex flex-col bg-white border-[1px] border-[#E0E0E0] rounded-[8px] relative overflow-hidden shadow-sm">
+                    {/* Tabs Navigation - Always at the top of the panel */}
+                    <div className="bg-[#F1F5F9]">
                         <div className="max-w-[1400px]">
                             <ViewerTabs activeTab={activeTab} onTabChange={setActiveTab} variant="tactical" />
                         </div>
                     </div>
 
                     {/* Tab Content Area - Scrollable but contained */}
-                    <div className="flex-1 overflow-y-auto px-10 py-8 custom-scrollbar relative z-10">
-                        <div className="max-w-[1400px]">
-                            {activeTab === 'general' && <GeneralTab threat={threat} layout="data" />}
-                            {activeTab === 'performance' && <PerformanceTab threat={threat} />}
+                    <div className="flex-1 overflow-y-auto px-10 py-8 custom-scrollbar relative z-10 bg-white">
+                        <div className="max-w-[1400px] mx-auto">
+                            {activeTab === 'general' && <GeneralTab threat={threat} layout="data" tab={activeTab} />}
+                            {activeTab === 'structural' && <ThreeDViewer missileName={threat.missile.name} />}
                             {activeTab === 'tech' && <TechTab threat={threat} />}
+                            {activeTab === 'rcs' && <RcsTab threat={threat} />}
                             {activeTab === 'aero' && <AeroTab threat={threat} />}
+                            {activeTab === 'performance' && <PerformanceTab threat={threat} />}
+                            {activeTab === 'flight' && <PerformanceTab threat={threat} />}
+                            {activeTab === 'heat' && <TechTab threat={threat} />}
                             {activeTab === 'mass' && <MassPropertiesTab threat={threat} />}
                         </div>
                     </div>
                 </div>
-
-                {/* Visual RIGHT Panel (The "Hero" Card) - Hidden for 'general' tab */}
-                {activeTab !== 'general' && (
-                    <div className="w-[500px] xl:w-[650px] h-full relative flex flex-col flex-shrink-0 animate-in slide-in-from-right duration-700">
-                        <div className="h-full flex flex-col bg-white border-[1px] border-[#E0E0E0] rounded-[8px] shadow-[0_12px_40px_rgba(0,0,0,0.06)] overflow-hidden">
-                            <GeneralTab threat={threat} layout="visual" />
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* Status Bar Footer */}

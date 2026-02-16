@@ -206,7 +206,7 @@ function App() {
   const [editingThreat, setEditingThreat] = useState<ThreatData | undefined>(undefined);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
-  const [viewingThreat, setViewingThreat] = useState<import('../../backend/src/models/FullMissileModel').FullMissileData | undefined>(undefined);
+  const [viewingThreat, setViewingThreat] = useState<import('../backend/src/models/FullMissileModel').FullMissileData | undefined>(undefined);
 
   React.useEffect(() => {
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');

@@ -4,6 +4,7 @@ import {
 } from 'recharts';
 import { FullMissileData } from '../../../../backend/src/models/FullMissileModel';
 import { Performance } from '../../../../backend/src/models/EngineeringModels';
+import { TrajectoryPlotter } from '../TrajectoryPlotter';
 
 interface PerformanceTabProps {
     threat: FullMissileData;
@@ -22,99 +23,10 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ threat }) => {
 
     const sortedData = [...performanceData].sort((a: Performance, b: Performance) => (a.perfIndex || 0) - (b.perfIndex || 0));
 
-    const CustomTooltip = ({ active, payload, label }: any) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-white border border-[#C7D8E6] p-4 shadow-xl rounded-[4px]">
-                    <p className="text-[10px] font-bold text-[#6b788e] mb-2 uppercase">Step Index: {label}</p>
-                    {payload.map((p: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-3">
-                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }}></div>
-                            <span className="text-[14px] font-bold text-[#144a54] uppercase">{p.value.toLocaleString()}</span>
-                            <span className="text-[10px] text-[#6b788e] font-bold uppercase">{p.name}</span>
-                        </div>
-                    ))}
-                </div>
-            );
-        }
-        return null;
-    };
-
     return (
         <div className="h-full flex flex-col gap-10 animate-in fade-in duration-700" style={{ fontFamily: "'Inter', sans-serif" }}>
-            <h3 className="text-[12px] font-bold text-[#144a54] uppercase tracking-widest flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-[#227d8d] rounded-full shadow-[0_2px_6px_rgba(3,135,158,0.3)]"></span>
-                Dynamic Trajectory Analysis
-            </h3>
-
-            <div className="grid grid-cols-2 gap-8 h-[400px]">
-                {/* Altitude vs Range */}
-                <div className="bg-white p-6 rounded-[8px] border border-[#C7D8E6] flex flex-col group hover:border-[#227d8d]/40 transition-all shadow-sm">
-                    <h4 className="text-[11px] font-bold text-[#6b788e] mb-6 uppercase tracking-wider">Flight Profile [ALT_KM x RNG_KM]</h4>
-                    <div className="flex-1 min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={sortedData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#ECF2F6" vertical={false} />
-                                <XAxis
-                                    dataKey="rng"
-                                    type="number"
-                                    stroke="#C7D8E6"
-                                    tick={{ fontSize: 9, fill: '#6b788e', fontWeight: 600 }}
-                                />
-                                <YAxis
-                                    stroke="#C7D8E6"
-                                    tick={{ fontSize: 9, fill: '#6b788e', fontWeight: 600 }}
-                                />
-                                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#227d8d', strokeWidth: 1 }} />
-                                <Line
-                                    type="monotone"
-                                    dataKey="alt"
-                                    stroke="#227d8d"
-                                    strokeWidth={3}
-                                    dot={false}
-                                    name="Alt (km)"
-                                    animationDuration={1500}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Velocity vs Time */}
-                <div className="bg-white p-6 rounded-[8px] border border-[#C7D8E6] flex flex-col group hover:border-[#227d8d]/40 transition-all shadow-sm">
-                    <h4 className="text-[11px] font-bold text-[#6b788e] mb-6 uppercase tracking-wider">Velocity Dynamics [VEL_MS x TIME_S]</h4>
-                    <div className="flex-1 min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={sortedData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#ECF2F6" vertical={false} />
-                                <XAxis
-                                    dataKey="timeOfFlight"
-                                    type="number"
-                                    stroke="#C7D8E6"
-                                    tick={{ fontSize: 9, fill: '#747E8B', fontWeight: 600 }}
-                                />
-                                <YAxis
-                                    stroke="#C7D8E6"
-                                    tick={{ fontSize: 9, fill: '#6b788e', fontWeight: 600 }}
-                                />
-                                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#5bbdeb', strokeWidth: 1 }} />
-                                <Line
-                                    type="monotone"
-                                    dataKey="velEndOfBurn"
-                                    stroke="#5bbdeb"
-                                    strokeWidth={3}
-                                    dot={false}
-                                    name="Vel (m/s)"
-                                    animationDuration={1500}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div>
-
             {/* Quick Summary Grid */}
-            <div className="grid grid-cols-4 gap-4 pb-8">
+            <div className="grid grid-cols-4 gap-4">
                 {[
                     { label: 'Apogee', value: Math.max(...sortedData.map((d: Performance) => d.apogeeAlt || 0)).toFixed(1), unit: 'KM', color: 'text-[#227d8d]' },
                     { label: 'Max Velocity', value: Math.max(...sortedData.map((d: Performance) => d.velEndOfBurn || 0)).toFixed(0), unit: 'M/S', color: 'text-[#5bbdeb]' },
@@ -129,6 +41,11 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ threat }) => {
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* Advanced Dynamic Plotter */}
+            <div className="flex-1 min-h-[500px]">
+                <TrajectoryPlotter performanceData={sortedData} />
             </div>
         </div>
     );
