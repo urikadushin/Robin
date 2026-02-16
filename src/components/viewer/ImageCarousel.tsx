@@ -5,9 +5,10 @@ import { ThreatImage } from '../../../backend/src/models/EngineeringModels';
 interface ImageCarouselProps {
     images: ThreatImage[];
     missileName: string;
+    showNavigation?: boolean;
 }
 
-export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileName }) => {
+export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileName, showNavigation = true }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
 
     const filteredImages = images?.filter(img =>
@@ -61,7 +62,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileNam
             {/* Header portion of the card */}
             <div className="px-8 pt-8 pb-4 flex flex-col items-center gap-1 text-center">
                 <h3 className="text-[18px] font-bold text-[#111827] uppercase tracking-wide">
-                    {missileName} structure
+                    {missileName} Gallery
                 </h3>
                 <p className="text-[13px] font-normal text-[#6B7280]">Description regarding this specific picture if needed</p>
             </div>
@@ -75,7 +76,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileNam
                     />
 
                     {/* Navigation Arrows - Minimal & Integrated */}
-                    {filteredImages.length > 1 && (
+                    {showNavigation && filteredImages.length > 1 && (
                         <>
                             <button
                                 onClick={prev}
@@ -96,7 +97,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileNam
                 </div>
 
                 {/* Pagination Dots */}
-                {filteredImages.length > 1 && (
+                {showNavigation && filteredImages.length > 1 && (
                     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
                         {filteredImages.map((_, i) => (
                             <button

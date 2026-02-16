@@ -201,6 +201,7 @@ function App() {
   const [threats, setThreats] = useState<ThreatData[]>([]);
 
   const [selectedThreatIds, setSelectedThreatIds] = useState<Set<string>>(new Set());
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(['Missile']);
 
   const [editingThreat, setEditingThreat] = useState<ThreatData | undefined>(undefined);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -232,8 +233,8 @@ function App() {
     const weights = threats.map(t => parseNum(t.weight));
 
     return {
-      range: [0, Math.ceil(Math.max(...ranges, 1000))] as [number, number],
-      velocity: [0, Math.ceil(Math.max(...velocities, 1000))] as [number, number],
+      range: [0, 5000] as [number, number],
+      velocity: [0, 5000] as [number, number],
       weight: [0, Math.ceil(Math.max(...weights, 1000))] as [number, number]
     };
   }, [threats]);
@@ -244,6 +245,42 @@ function App() {
     setVelocity([bounds.velocity[0], bounds.velocity[1]]);
     setWeight([bounds.weight[0], bounds.weight[1]]);
   }, [bounds]);
+
+  // Centralized filtering logic
+  const filteredThreats = React.useMemo(() => {
+    return threats.filter((threat) => {
+      const threatRange = threat.maxRange ?? parseNum(threat.range);
+      const threatSpeed = parseNum(threat.speed);
+      const threatWeight = parseNum(threat.weight);
+      const threatType = threat.missile || '';
+
+      // Range, Velocity, Weight filters
+      const metricsMatch =
+        threatRange >= range[0] && threatRange <= range[1] &&
+        threatSpeed >= velocity[0] && threatSpeed <= velocity[1] &&
+        threatWeight >= weight[0] && threatWeight <= weight[1];
+
+      if (!metricsMatch) return false;
+
+      // Type filter (Multi-select) - checking multiple fields for robustness
+      // Logic requirement: show empty list if no types selected
+      if (selectedTypes.length === 0) return false;
+
+      const searchableText = `${threat.missile} ${threat.countries} ${threat.name}`.toLowerCase();
+      return selectedTypes.some(selectedType => {
+        if (selectedType === 'Missile') {
+          return searchableText.includes('ballistic') || searchableText.includes('missile');
+        }
+        if (selectedType === 'UAV') {
+          return searchableText.includes('uav') || searchableText.includes('drone');
+        }
+        if (selectedType === 'Cruise') {
+          return searchableText.includes('cruise');
+        }
+        return false;
+      });
+    });
+  }, [threats, range, velocity, weight, selectedTypes]);
 
   React.useEffect(() => {
     const loadThreats = async () => {
@@ -376,6 +413,15 @@ function App() {
             weight={weight}
             setWeight={setWeight}
             bounds={bounds}
+            selectedTypes={selectedTypes}
+            onTypeChange={(type) => {
+              setSelectedTypes(prev =>
+                prev.includes(type)
+                  ? prev.filter(t => t !== type)
+                  : [...prev, type]
+              );
+            }}
+            onResetTypes={() => setSelectedTypes([])}
           />
         </div>
         {/* ResultsPanel (positioned higher on the screen) */}
@@ -383,16 +429,13 @@ function App() {
           pointerEvents: 'auto',
           position: 'absolute',
           top: 220, // Increased from 180 to clear FiltersBar
-          right: 32,
-          width: 'calc(100% - 32px)',
+          right: 18, // Aligned with FiltersBar margin
+          width: 'calc(100% - 18px)',
           maxWidth: '500px' // Increased slightly for better layout
         }}>
 
           <ResultsPanel
-            threats={threats}
-            rangeFilter={range}
-            velocityFilter={velocity}
-            weightFilter={weight}
+            threats={filteredThreats}
             selectedThreatIds={selectedThreatIds}
             onToggleSelection={handleToggleSelection}
             onEdit={handleEditThreat}
@@ -494,9 +537,23 @@ interface FiltersBarProps {
     velocity: [number, number];
     weight: [number, number];
   };
+  selectedTypes: string[];
+  onTypeChange: (type: string) => void;
+  onResetTypes: () => void;
 }
 
-function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight, bounds }: FiltersBarProps) {
+function FiltersBar({
+  range,
+  setRange,
+  velocity,
+  setVelocity,
+  weight,
+  setWeight,
+  bounds,
+  selectedTypes,
+  onTypeChange,
+  onResetTypes
+}: FiltersBarProps) {
   const [viewBy, setViewBy] = useState<'threats' | 'countries'>('threats');
 
   return (
@@ -523,6 +580,7 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight,
             setRange([bounds.range[0], bounds.range[1]]);
             setVelocity([bounds.velocity[0], bounds.velocity[1]]);
             setWeight([bounds.weight[0], bounds.weight[1]]);
+            onResetTypes();
           }}
         >
           Reset
@@ -530,13 +588,22 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight,
       </div>
       <div className="filters-bar__filters">
         <div className="filters-bar__threat-types">
-          <button className="filters-bar__threat-btn filters-bar__threat-btn--active">
+          <button
+            className={`filters-bar__threat-btn${selectedTypes.includes('Missile') ? ' filters-bar__threat-btn--active' : ''}`}
+            onClick={() => onTypeChange('Missile')}
+          >
             <span role="img" aria-label="Missile" style={{ fontSize: '18px', fontWeight: 'bold' }}>▲</span> Missile
           </button>
-          <button className="filters-bar__threat-btn">
+          <button
+            className={`filters-bar__threat-btn${selectedTypes.includes('UAV') ? ' filters-bar__threat-btn--active' : ''}`}
+            onClick={() => onTypeChange('UAV')}
+          >
             <span role="img" aria-label="UAV" style={{ fontSize: '18px' }}>✈</span> UAV
           </button>
-          <button className="filters-bar__threat-btn">
+          <button
+            className={`filters-bar__threat-btn${selectedTypes.includes('Cruise') ? ' filters-bar__threat-btn--active' : ''}`}
+            onClick={() => onTypeChange('Cruise')}
+          >
             <span role="img" aria-label="Cruise" style={{ fontSize: '18px', fontWeight: 'bold' }}>➤</span> Cruise
           </button>
         </div>
@@ -548,7 +615,7 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight,
           <DualRangeSlider
             min={bounds.range[0]}
             max={bounds.range[1]}
-            step={Math.ceil(bounds.range[1] / 100)}
+            step={100}
             value={range}
             onChange={setRange}
           />
@@ -562,7 +629,7 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight,
           <DualRangeSlider
             min={bounds.velocity[0]}
             max={bounds.velocity[1]}
-            step={Math.ceil(bounds.velocity[1] / 100)}
+            step={100}
             value={velocity}
             onChange={setVelocity}
           />
@@ -576,7 +643,7 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight,
           <DualRangeSlider
             min={bounds.weight[0]}
             max={bounds.weight[1]}
-            step={Math.ceil(bounds.weight[1] / 100)}
+            step={100}
             value={weight}
             onChange={setWeight}
           />
@@ -588,9 +655,6 @@ function FiltersBar({ range, setRange, velocity, setVelocity, weight, setWeight,
 
 interface ResultsPanelProps {
   threats: ThreatData[];
-  rangeFilter: [number, number];
-  velocityFilter: [number, number];
-  weightFilter: [number, number];
   selectedThreatIds: Set<string>;
   onToggleSelection: (id: string) => void;
   onEdit: (threat: ThreatData) => void;
@@ -601,9 +665,6 @@ interface ResultsPanelProps {
 
 const ResultsPanel: React.FC<ResultsPanelProps> = ({
   threats,
-  rangeFilter,
-  velocityFilter,
-  weightFilter,
   selectedThreatIds,
   onToggleSelection,
   onEdit,
@@ -625,7 +686,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
     scrollBehavior: 'smooth',
     overflow: 'hidden',
     marginLeft: 'auto',
-    marginRight: '24px'
+    marginRight: '0' // Aligned with wrapper right
   };
 
 
@@ -655,10 +716,10 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
     width: '100%',
     maxWidth: '450px',
     backgroundColor: 'transparent',
-    padding: '0 0 16px', // Increased bottom padding
+    padding: '0 0 16px 24px', // Added 24px left padding to align with list
     pointerEvents: 'auto',
     marginLeft: 'auto',
-    marginRight: '24px'
+    marginRight: '0'
   };
 
 
@@ -784,38 +845,23 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
         width: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',
-        paddingRight: '24px',
+        paddingLeft: '24px', // Space for scrollbar on the left
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'flex-end'
+        alignItems: 'flex-end',
+        direction: 'rtl' // Move scrollbar to the left
       }}>
-        {threats.filter((threat) => {
-          // Helper to extract number from strings like "1000 km" or "Unknown"
-          const parseNum = (val: string | number | undefined) => {
-            if (typeof val === 'number') return val;
-            if (!val || val === 'Unknown') return 0;
-            const matches = val.toString().match(/(\d+(\.\d+)?)/);
-            return matches ? parseFloat(matches[0]) : 0;
-          };
-
-          const threatRange = threat.maxRange ?? parseNum(threat.range);
-          const threatSpeed = parseNum(threat.speed);
-          const threatWeight = parseNum(threat.weight);
-
-          // Filter based on slider values
-          return (
-            threatRange >= rangeFilter[0] && threatRange <= rangeFilter[1] &&
-            threatSpeed >= velocityFilter[0] && threatSpeed <= velocityFilter[1] &&
-            threatWeight >= weightFilter[0] && threatWeight <= weightFilter[1]
-          );
-        }).map((threat) => {
+        {threats.map((threat) => {
           const isHovered = hoveredThreatId === threat.id;
           const isSelected = selectedThreatIds.has(threat.id);
           return (
             <div
               key={threat.id}
-              style={getThreatItemStyle(threat.id, isHovered, isSelected)}
+              style={{
+                ...getThreatItemStyle(threat.id, isHovered, isSelected),
+                direction: 'ltr' // Restore LTR for content
+              }}
               onMouseEnter={() => setHoveredThreatId(threat.id)}
               onMouseLeave={() => setHoveredThreatId(null)}
               onClick={() => onView(threat)}
@@ -886,19 +932,25 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
                   width: '100%',
                   gap: '2px'
                 }}>
-                  {[threat.missile, threat.range, threat.speed, threat.weight, threat.countries].map((item, i, arr) => (
-                    <React.Fragment key={i}>
-                      <span style={{
-                        ...metaItemStyle,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        maxWidth: '100%',
-                        display: 'inline-block'
-                      }}>{item}</span>
-                      {i < arr.length - 1 && <div style={dividerStyle} />}
-                    </React.Fragment>
-                  ))}
+                  {[threat.status, threat.missile, threat.range, threat.speed, threat.weight, threat.countries]
+                    .filter(item => {
+                      if (!item) return false;
+                      const s = item.toString().toLowerCase();
+                      return !s.includes('unknown');
+                    })
+                    .map((item, i, arr) => (
+                      <React.Fragment key={i}>
+                        <span style={{
+                          ...metaItemStyle,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '100%',
+                          display: 'inline-block'
+                        }}>{item}</span>
+                        {i < arr.length - 1 && <div style={dividerStyle} />}
+                      </React.Fragment>
+                    ))}
                 </div>
               </div>
             </div>
