@@ -106,9 +106,9 @@ export const ThreatViewer: React.FC<ThreatViewerProps> = ({ threat, onClose, onE
 
                     {/* Tab Content Area - Scrollable but contained */}
                     <div className="flex-1 overflow-y-auto px-10 py-8 custom-scrollbar relative z-10 bg-white">
-                        <div className="max-w-[1400px] mx-auto">
+                        <div className="max-w-[1400px] mx-auto h-full flex flex-col">
                             {activeTab === 'general' && <GeneralTab threat={threat} layout="data" tab={activeTab} />}
-                            {activeTab === 'structural' && <ThreeDViewer missileName={threat.missile.name} />}
+                            {activeTab === 'structural' && <ThreeDViewer missileName={threat.missile.name} assets={threat.images} />}
                             {activeTab === 'tech' && <TechTab threat={threat} />}
                             {activeTab === 'rcs' && <RcsTab threat={threat} />}
                             {activeTab === 'aero' && <AeroTab threat={threat} />}
