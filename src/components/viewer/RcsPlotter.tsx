@@ -81,25 +81,25 @@ export const RcsPlotter: React.FC<RcsPlotterProps> = ({ performanceData }) => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#1a1c1e] rounded-xl border border-teal-500/20 overflow-hidden">
-            <div className="p-4 border-b border-teal-500/20 flex items-center justify-between bg-black/20">
+        <div className="flex flex-col h-full bg-white rounded-[12px] border border-[#E2E8F0] shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-[#E2E8F0] flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-3">
-                    <div className="bg-teal-500/10 p-2 rounded-lg">
-                        <Radar className="w-5 h-5 text-teal-400" />
+                    <div className="bg-[#227d8d]/10 p-2 rounded-lg">
+                        <Radar className="w-5 h-5 text-[#227d8d]" />
                     </div>
                     <div>
-                        <h3 className="text-white font-semibold text-sm">Dynamic RCS Signature</h3>
-                        <p className="text-teal-400/60 text-xs">Multi-frequency response analysis</p>
+                        <h3 className="text-[#144a54] font-bold text-[14px]">Dynamic RCS Signature</h3>
+                        <p className="text-[#6b788e] text-[10px] font-bold uppercase tracking-tight">Multi-frequency response analysis</p>
                     </div>
                 </div>
 
                 <div className="flex flex-col">
-                    <label className="text-[10px] text-teal-400/40 uppercase font-bold mb-1">Select Engagement Run</label>
+                    <label className="text-[9px] font-bold text-[#6b788e] uppercase mb-1">Select Engagement Run</label>
                     <select
                         value={selectedPerfId ?? ''}
                         onChange={(e) => setSelectedPerfId(parseInt(e.target.value))}
                         title="Select Performance Run"
-                        className="bg-[#2a2d31] text-teal-50 text-xs border border-teal-500/30 rounded px-2 py-1 focus:outline-none focus:border-teal-400 transition-colors cursor-pointer"
+                        className="bg-slate-50 border border-[#C7D8E6] rounded px-2 py-1 text-[10px] font-bold text-[#144a54] outline-none transition-colors cursor-pointer"
                     >
                         {performanceData.map(p => (
                             <option key={p.perfIndex} value={p.perfIndex}>
@@ -110,31 +110,43 @@ export const RcsPlotter: React.FC<RcsPlotterProps> = ({ performanceData }) => {
                 </div>
             </div>
 
-            <div className="flex-1 p-4 min-h-[300px] relative">
+            <div className="flex-1 p-6 min-h-[400px] relative">
                 {loading ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-2" />
-                        <span className="text-teal-400 text-sm">Loading Signal Data...</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10">
+                        <Loader2 className="w-8 h-8 text-[#227d8d] animate-spin mb-2" />
+                        <span className="text-[12px] font-bold text-[#227d8d] uppercase">Loading Signal Data...</span>
                     </div>
                 ) : error ? (
-                    <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-red-400">
-                        <p className="text-sm font-medium">{error}</p>
+                    <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-red-500">
+                        <p className="text-[14px] font-bold text-[#144a54]">{error}</p>
                     </div>
                 ) : data.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#2dd4bf" opacity={0.1} vertical={false} />
-                            <XAxis dataKey="time" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #14b8a6', borderRadius: '8px', fontSize: '12px' }}
-                                itemStyle={{ color: '#2dd4bf' }}
+                        <LineChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                            <XAxis
+                                dataKey="time"
+                                type="number"
+                                domain={['auto', 'auto']}
+                                tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }}
+                                axisLine={false}
+                                tickLine={false}
                             />
-                            <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-                            <Line type="monotone" dataKey="rcs1" stroke="#2dd4bf" strokeWidth={1.5} dot={false} name="Freq A" />
-                            <Line type="monotone" dataKey="rcs2" stroke="#fbbf24" strokeWidth={1.5} dot={false} name="Freq B" />
-                            <Line type="monotone" dataKey="rcs3" stroke="#f472b6" strokeWidth={1.5} dot={false} name="Freq C" />
-                            <Line type="monotone" dataKey="rcs4" stroke="#60a5fa" strokeWidth={1.5} dot={false} name="Freq D" />
+                            <YAxis
+                                type="number"
+                                domain={['auto', 'auto']}
+                                tick={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }}
+                                axisLine={false}
+                                tickLine={false}
+                            />
+                            <Tooltip
+                                contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '12px' }}
+                            />
+                            <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' }} />
+                            <Line data={data} type="monotone" dataKey="rcs1" stroke="#227d8d" strokeWidth={2} dot={false} name="Freq A" isAnimationActive={false} connectNulls />
+                            <Line data={data} type="monotone" dataKey="rcs2" stroke="#ef4444" strokeWidth={2} dot={false} name="Freq B" isAnimationActive={false} connectNulls />
+                            <Line data={data} type="monotone" dataKey="rcs3" stroke="#f59e0b" strokeWidth={2} dot={false} name="Freq C" isAnimationActive={false} connectNulls />
+                            <Line data={data} type="monotone" dataKey="rcs4" stroke="#6366f1" strokeWidth={2} dot={false} name="Freq D" isAnimationActive={false} connectNulls />
                         </LineChart>
                     </ResponsiveContainer>
                 ) : null}
