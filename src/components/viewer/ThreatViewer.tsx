@@ -9,6 +9,7 @@ import { TechTab } from './tabs/TechTab';
 import { AeroTab } from './tabs/AeroTab';
 import { MassPropertiesTab } from './tabs/MassPropertiesTab';
 import { RcsTab } from './tabs/RcsTab';
+import HeatTab from './tabs/HeatTab';
 import { ThreeDViewer } from './ThreeDViewer';
 
 interface ThreatViewerProps {
@@ -114,7 +115,7 @@ export const ThreatViewer: React.FC<ThreatViewerProps> = ({ threat, onClose, onE
                             {activeTab === 'aero' && <AeroTab threat={threat} />}
                             {activeTab === 'performance' && <PerformanceTab threat={threat} />}
                             {activeTab === 'flight' && <PerformanceTab threat={threat} />}
-                            {activeTab === 'heat' && <TechTab threat={threat} />}
+                            {activeTab === 'heat' && <HeatTab threat={threat} />}
                             {activeTab === 'mass' && <MassPropertiesTab threat={threat} />}
                         </div>
                     </div>

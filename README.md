@@ -1,4 +1,4 @@
-# ALUMA
+# RAYVEN
 
 This is a simple React web app (using Vite) that displays all your `.tsx` Figma design components in a visual gallery. Just put your exported Figma `.tsx` files in `src/components/figma/` and they will appear automatically.
 
