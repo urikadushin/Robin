@@ -75,7 +75,6 @@ interface ThreeDViewerProps {
 
 export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName, assets = [] }) => {
     const nameLower = missileName.toLowerCase();
-    const [selectedPartId, setSelectedPartId] = useState<string>('ALL');
 
     const parts = useMemo(() => {
         // If we have database assets of type 3dModel, use them exclusively
@@ -144,8 +143,8 @@ export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName, assets 
                             key={part.id}
                             onClick={() => setSelectedPartId(part.id)}
                             className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all duration-200 ${selectedPartId === part.id
-                                    ? 'bg-teal-600 text-white shadow-md scale-105'
-                                    : 'text-gray-500 hover:text-teal-600 hover:bg-teal-50'
+                                ? 'bg-teal-600 text-white shadow-md scale-105'
+                                : 'text-gray-500 hover:text-teal-600 hover:bg-teal-50'
                                 }`}
                         >
                             {part.id}
@@ -184,7 +183,7 @@ export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName, assets 
                             enableDamping
                             dampingFactor={0.05}
                             autoRotate
-                            autoRotateSpeed={selectedPartId === 'ALL' ? 0.5 : 0}
+                            autoRotateSpeed={0.1}
                         />
                     </Suspense>
                 </Canvas>
