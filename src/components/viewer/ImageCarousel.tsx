@@ -33,7 +33,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileNam
 
     // Helper to build image URL
     const getImageUrl = (img: ThreatImage) => {
-        const baseUrl = 'http://localhost:3000/api/data/Images';
+        const baseUrl = '/api/data/Images';
         const type = img.image_type;
         const filename = img.image_path || '';
         const mName = missileName.toUpperCase();

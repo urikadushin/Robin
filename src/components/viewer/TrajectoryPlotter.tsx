@@ -42,7 +42,7 @@ export const TrajectoryPlotter: React.FC<TrajectoryPlotterProps> = ({ performanc
 
                 // Path is typically something like "BULAVA\bulava_bt_2000.txt"
                 // The server serves this via /api/data/Trajectories
-                const response = await fetch(`http://localhost:3000/api/data/Trajectories/${path.replace(/\\/g, '/')}`);
+                const response = await fetch(`/api/data/Trajectories/${path.replace(/\\/g, '/')}`);
                 if (!response.ok) throw new Error('Failed to fetch trajectory file');
 
                 const text = await response.text();
