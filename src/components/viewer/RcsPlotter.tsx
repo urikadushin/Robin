@@ -24,31 +24,63 @@ export const RcsPlotter: React.FC<RcsPlotterProps> = ({ performanceData }) => {
         [performanceData, selectedPerfId]
     );
 
-    useEffect(() => {
-        if (!selectedPerf) return;
+    const radarLabels = useMemo(() => {
+        const selectedRun = performanceData.find(p => p.perfIndex === selectedPerfId);
+        if (selectedRun?.rcs && selectedRun.rcs.length > 0) {
+            // Take the first RCS entry's radars string
+            const radarsStr = selectedRun.rcs[0].radars || '';
+            const names = radarsStr.split(/\s+/).filter((n: string) => n.length > 0);
+            return {
+                rcs1: names[0] || 'Radar 1',
+                rcs2: names[1] || 'Radar 2',
+                rcs3: names[2] || 'Radar 3',
+                rcs4: names[3] || 'Radar 4'
+            };
+        }
+        return {
+            rcs1: 'Freq A',
+            rcs2: 'Freq B',
+            rcs3: 'Freq C',
+            rcs4: 'Freq D'
+        };
+    }, [performanceData, selectedPerfId]);
 
-        const loadTrajectory = async () => {
+    useEffect(() => {
+        const fetchTraj = async () => {
             setLoading(true);
             setError(null);
+            const selectedRun = performanceData.find(p => p.perfIndex === selectedPerfId);
+            const path = selectedRun?.trajectoryRvPath || selectedRun?.trajectoryBtPath;
+
+            if (!path) {
+                setError('No trajectory file path found for selected run.');
+                setData([]);
+                setLoading(false);
+                return;
+            }
+
             try {
-                const path = selectedPerf.trajectoryRvPath || selectedPerf.trajectoryBtPath;
-                if (!path) throw new Error('No trajectory file path found');
-
-                const response = await fetch(`http://localhost:3000/api/data/Trajectories/${path.replace(/\\/g, '/')}`);
+                const response = await fetch(`/api/data/Trajectories/${path.replace(/\\/g, '/')}`);
                 if (!response.ok) throw new Error('Failed to fetch trajectory file');
-
                 const text = await response.text();
                 parseTrajFile(text);
             } catch (err: any) {
                 setError(err.message);
                 setData([]);
+                console.error('Error fetching RCS trajectory:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        loadTrajectory();
-    }, [selectedPerf]);
+        if (selectedPerfId !== null) {
+            fetchTraj();
+        } else {
+            setData([]);
+            setError(null);
+            setLoading(false);
+        }
+    }, [performanceData, selectedPerfId]);
 
     const parseTrajFile = (text: string) => {
         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -75,6 +107,10 @@ export const RcsPlotter: React.FC<RcsPlotterProps> = ({ performanceData }) => {
                 parsedData.push(point);
             }
         }
+
+        // Debug: Log if we have non-zero RCS values
+        const hasRcsData = parsedData.some(p => (p.rcs1 || 0) !== 0 || (p.rcs2 || 0) !== 0 || (p.rcs3 || 0) !== 0 || (p.rcs4 || 0) !== 0);
+        console.log(`Parsed ${parsedData.length} points for run ${selectedPerfId}. Has non-zero RCS: ${hasRcsData}`);
 
         const samplingRate = Math.max(1, Math.floor(parsedData.length / 500));
         setData(parsedData.filter((_, idx) => idx % samplingRate === 0));

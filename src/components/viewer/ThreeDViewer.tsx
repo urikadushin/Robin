@@ -129,7 +129,7 @@ export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName, assets 
     }
 
     return (
-        <div className="relative w-full h-full bg-[#f8fafc] rounded-xl overflow-hidden shadow-inner">
+        <div className="w-full h-[850px] bg-[#f8fafc] rounded-xl border border-slate-200 relative overflow-hidden flex flex-col group shadow-sm">
             {/* Part Selection Pills */}
             <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-sm rounded-full border border-gray-100 shadow-sm transition-all hover:bg-white">
