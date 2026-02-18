@@ -54,7 +54,7 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({ threat, variant = 'd
                 <MetricItem label="Range (km)" value={getPerformanceValue('max_range') || getSizeValue(['maxRange', 'max_range'])} />
                 <MetricItem label="Accuracy (m)" value={getPerformanceValue('accuracy') || getSizeValue(['accuracy'])} />
                 <MetricItem label="Velocity (mach)" value={getPerformanceValue('velocity_mach') || getSizeValue(['velocity'])} />
-                <MetricItem label="Mass (tonnes)" value={getSizeValue(['launch_weight', 'weight', 'launchWeight'])} />
+                <MetricItem label="Mass (tonnes)" value={getSizeValue(['launchWeight', 'launch_weight', 'weight']) ? (parseFloat(getSizeValue(['launchWeight', 'launch_weight', 'weight'])!) / 1000).toFixed(1) : '---'} />
                 <MetricItem label="Length (m)" value={getSizeValue(['length', 'totalLength'])} />
                 <MetricItem label="Diameter (m)" value={getSizeValue(['diameter', 'd'])} />
                 <MetricItem label="Warhead Weight (kg)" value={getSizeValue(['warhead_weight', 'wh_weight'])} />

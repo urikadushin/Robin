@@ -1,0 +1,27 @@
+﻿[dotenv@17.2.4] injecting env (5) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+Listing all Hebrew descriptions in images table...
+Found 24 unique Hebrew descriptions:
+HEBREW_START: Bulava Stage 1 :HEBREW_END
+HEBREW_START: Bulava Stage 2 :HEBREW_END
+HEBREW_START: Bulava Stage 3 :HEBREW_END
+HEBREW_START: ╫ö╫ñ╫¿╫ô╫ö ╫₧╫á╫ò╫ó 1 :HEBREW_END
+HEBREW_START: NULL :HEBREW_END
+HEBREW_START: ╫ù╫Ö╫⌐╫ò╫æ ╫⌐╫ù╫₧ ╫⌐╫£ ╫ö╫Æ╫ò╫ú ╫ö╫É╫ù╫ò╫ô ╫¢╫ñ╫ò╫á╫º╫ª╫Ö╫ö ╫⌐╫£ ╫û╫ò╫Ö╫¬ theta :HEBREW_END
+HEBREW_START: ╫ù╫Ö╫⌐╫ò╫æ ╫⌐╫ù╫₧ ╫⌐╫£ ╫ö╫Æ╫ò╫ú ╫ö╫ù╫ò╫ô╫¿ ╫¢╫ñ╫ò╫á╫º╫ª╫Ö╫ö ╫⌐╫£ ╫û╫ò╫Ö╫¬ theta :HEBREW_END
+HEBREW_START: ╫ù╫Ö╫⌐╫ò╫æ ╫⌐╫ù╫₧ ╫⌐╫£ ╫ö╫₧╫á╫ò╫ó ╫¢╫ñ╫ò╫á╫º╫ª╫Ö╫ö ╫⌐╫£ ╫û╫ò╫Ö╫¬ theta :HEBREW_END
+HEBREW_START: ╫ù╫¬╫Ö╫₧╫ö ╫ÿ╫¿╫₧╫Ö╫¬ ╫⌐╫£ ╫ö╫Æ╫ò╫ú ╫ö╫ù╫ò╫ô╫¿ - ╫₧╫æ╫ÿ 1  :HEBREW_END
+HEBREW_START: ╫ù╫¬╫Ö╫₧╫ö ╫ÿ╫¿╫₧╫Ö╫¬ ╫⌐╫£ ╫ö╫Æ╫ò╫ú ╫ö╫ù╫ò╫ô╫¿ - ╫₧╫æ╫ÿ 2  :HEBREW_END
+HEBREW_START: ╫É╫Ö╫ò╫¿ ╫⌐╫£ Shahed 136 - ╫₧╫æ╫ÿ ╫ó╫£ :HEBREW_END
+HEBREW_START: ╫É╫Ö╫ò╫¿ ╫⌐╫£ Shahed 136 - ╫₧╫æ╫ÿ ╫ó╫£ ╫ù╫£╫º╫ò ╫ö╫¬╫ù╫¬╫ò╫ƒ. ╫¬╫⌐╫ò╫₧╫¬ ╫£╫æ ╫£╫₧╫Ö╫º╫ò╫¥ ╫ö╫₧╫É╫Ö╫Ñ ╫ö╫¿╫º╫ÿ╫Ö ╫ö╫₧╫ò╫ª╫º ╫ö╫á╫Ö╫¬╫º ╫£╫É╫ù╫¿ Launch ╫ö╫¢╫£╫Ö :HEBREW_END
+HEBREW_START: ╫á╫¬╫ò╫á╫Ö╫¥ ╫¿╫⌐╫₧╫Ö╫Ö╫¥ ╫⌐╫£ ╫Æ╫É╫¿╫ƒ2 ╫¿╫ò╫í╫ó - ╫Ö╫Ö╫ª╫ò╫¿ ╫₧╫º╫ò╫₧╫Ö ╫⌐╫£ Shahed 136 ╫₧╫¬╫ò╫Ü ╫₧╫ª╫Æ╫¬ ╫Ö╫ª╫¿╫ƒ ╫⌐╫ö╫ò╫ô╫£╫ñ╫ö ╫ó╫£ ╫Ö╫ô╫Ö ╫ñ╫ª╫ù╫á╫Ö╫¥.  :HEBREW_END
+HEBREW_START: Shahed 136 ╫æ╫¬╫ª╫ò╫Æ╫ö ╫æ╫ÿ╫ö╫É╫¿╫ƒ - ╫₧╫æ╫ÿ ╫ÿ╫ò╫æ ╫ó╫£ ╫ö╫₧╫á╫ò╫ó :HEBREW_END
+HEBREW_START: Shahed 136 ╫ó╫£ Launcher ╫ù╫ª╫ò╫æ╫ö ╫£╫¢╫£╫Ö ╫Ö╫ù╫Ö╫ô :HEBREW_END
+HEBREW_START:  Shahed 136 ╫₧╫₧╫⌐╫É╫Ö╫¬ ╫ö╫á╫ò╫⌐╫É╫¬ ╫ù╫₧╫Ö╫⌐╫ö ╫¢╫£╫Ö╫¥. ╫¬╫⌐╫ò╫₧╫¬ ╫£╫æ ╫£╫£╫ö╫æ╫ö ╫ö╫á╫ñ╫£╫ÿ╫¬ ╫₧╫ö╫₧╫É╫Ö╫Ñ ╫ö╫¿╫º╫ÿ╫Ö ╫ö╫á╫Ö╫¬╫º╫ƒ :HEBREW_END
+HEBREW_START: ╫₧╫⌐╫É╫Ö╫¬ ╫ó╫¥ ╫É╫¿╫æ╫ó╫ö ╫û╫æ╫Ö╫£╫Ö╫¥ ╫£Shahed 136 :HEBREW_END
+HEBREW_START: ╫ù╫Ö╫⌐╫ò╫æ ╫₧╫º╫ò╫¿╫æ ╫⌐╫£ ╫⌐╫ù╫¥ ╫£Shahed 136 ╫æ╫ù╫Ö╫¬╫ò╫Ü ╫£╫ñ╫Ö ╫û╫ò╫ò╫Ö╫¬ ╫ö╫¢╫£╫Ö ╫æ╫Ö╫ù╫í ╫£╫₧╫ó╫¿╫¢╫¬ ╫ö╫₧╫¢╫¥ :HEBREW_END
+HEBREW_START: ╫ö╫ù╫û╫¿ ╫₧╫¢╫¥ ╫₧╫º╫ò╫¿╫æ ╫₧Shahed 136 :HEBREW_END
+HEBREW_START: ╫á╫Ö╫¬╫ò╫ù ╫á╫ò╫í╫ú ╫⌐╫£ ╫ö╫ù╫û╫¿ ╫₧╫¢╫¥ ╫₧Shahed 136 (╫₧╫Ö╫₧╫Ö╫ƒ, ╫ö╫¢╫£╫Ö ╫ö╫⌐╫á╫Ö ╫£╫ö╫⌐╫ò╫ò╫É╫ö) ╫⌐╫ñ╫ò╫¿╫í╫¥ ╫æ╫¿╫⌐╫¬ ╫ö╫ù╫æ╫¿╫¬╫Ö╫¬  :HEBREW_END
+HEBREW_START: ╫¬╫₧╫ò╫á╫ö ╫¿╫⌐╫₧╫Ö╫¬ ╫₧╫É╫ù╫¿╫ò╫ó ╫ù╫⌐╫Ö╫ñ╫¬ ╫öMissile ╫æ 2020 :HEBREW_END
+HEBREW_START: ╫ñ╫¿╫Ö╫í╫ö ╫⌐╫£ Missile╫Ö╫¥ ╫£╫º╫¿╫É╫¬ ╫Ö╫¿╫Ö ╫æ╫¬╫¿╫Æ╫Ö╫£.Launcher╫Ö Missile╫Ö╫¥ ╫æ╫ô╫Ö╫Æ╫ò╫¥ ╫û╫ö ╫ö╫ò╫ñ╫Ö╫ó╫ò ╫£╫¿╫É╫⌐╫ò╫á╫ö ╫æ╫⌐╫á╫¬ 2024 ╫ò╫ö╫¥ Different from other Iranian missiles :HEBREW_END
+HEBREW_START: Iranian infographic (Nov 2024), ╫£╫º╫¿╫É╫¬ ╫É╫ñ╫⌐╫¿╫ò╫¬ ╫⌐╫£ Third attack on Israel :HEBREW_END
+HEBREW_START:  Iranian infographic (Nov 2024) :HEBREW_END

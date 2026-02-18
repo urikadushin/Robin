@@ -931,11 +931,17 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
                   width: '100%',
                   gap: '2px'
                 }}>
-                  {[threat.status, threat.missile, threat.range, threat.speed, threat.weight, threat.countries]
+                  {[
+                    threat.missile,
+                    threat.range,
+                    threat.speed,
+                    threat.weight ? `${(parseFloat(threat.weight.replace(/[^0-9.]/g, '')) / 1000).toFixed(1)} t` : null,
+                    threat.countries
+                  ]
                     .filter(item => {
                       if (!item) return false;
                       const s = item.toString().toLowerCase();
-                      return !s.includes('unknown');
+                      return !s.includes('unknown') && !s.includes('nan');
                     })
                     .map((item, i, arr) => (
                       <React.Fragment key={i}>

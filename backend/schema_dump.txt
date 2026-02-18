@@ -1,0 +1,13 @@
+CREATE TABLE `weightandsize` (
+  `idweightandsize` int NOT NULL,
+  `missile_id` int NOT NULL,
+  `missile_name` varchar(70) DEFAULT NULL,
+  `description` varchar(100) DEFAULT NULL,
+  `generic_name` varchar(45) DEFAULT NULL,
+  `property_value` text,
+  `sign` varchar(10) DEFAULT NULL,
+  `unit` varchar(10) DEFAULT NULL,
+  `subject` varchar(45) DEFAULT NULL,
+  KEY `missile_id_idx` (`missile_id`),
+  CONSTRAINT `ws_missile_id` FOREIGN KEY (`missile_id`) REFERENCES `missiles` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
