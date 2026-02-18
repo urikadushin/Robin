@@ -490,7 +490,10 @@ export default App;
 function TopBar({ darkMode, setDarkMode }: { darkMode: boolean, setDarkMode: (v: boolean) => void }) {
   return (
     <header className="top-bar">
-      <div className="top-bar__title">Explore</div>
+      <div className="flex items-center gap-12">
+        <img src="/RavenLogo.png" alt="Raven Logo" className="w-8 h-8 object-contain" />
+        <div className="top-bar__title">Explore</div>
+      </div>
       <div className="top-bar__spacer" />
       <button
         style={{
