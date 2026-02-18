@@ -64,7 +64,7 @@ export const mapBackendToFrontend = (missile: any, weightAndSize: any[], aerodyn
         length: getVal(['totalLength', 'length']),
         diameter: getVal(['d', 'diameter']),
         launchWeight: getVal(['launchWeight', 'weight', 'launch_weight']),
-        payloadWeight: getVal(['wh_weight', 'payload_weight']),
+        payloadWeight: getVal(['wh_weight', 'payload_weight', 'whWeight', 'whWeightExplosive']),
 
         // Performance
         maxAltitude: maxAlt > 0 ? maxAlt.toString() : undefined,

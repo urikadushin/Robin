@@ -230,12 +230,12 @@ function App() {
 
     const ranges = threats.map(t => t.maxRange ?? parseNum(t.range));
     const velocities = threats.map(t => parseNum(t.speed));
-    const weights = threats.map(t => parseNum(t.weight));
+    const warheadWeights = threats.map(t => parseNum(t.payloadWeight));
 
     return {
       range: [0, 5000] as [number, number],
       velocity: [0, 5000] as [number, number],
-      weight: [0, Math.ceil(Math.max(...weights, 1000))] as [number, number]
+      weight: [0, Math.ceil(Math.max(...warheadWeights, 1000))] as [number, number]
     };
   }, [threats]);
 
@@ -251,14 +251,15 @@ function App() {
     return threats.filter((threat) => {
       const threatRange = threat.maxRange ?? parseNum(threat.range);
       const threatSpeed = parseNum(threat.speed);
+      const threatWarhead = parseNum(threat.payloadWeight);
       const threatWeight = parseNum(threat.weight);
       const threatType = threat.missile || '';
 
-      // Range, Velocity, Weight filters
+      // Range, Velocity, Warhead Weight filters
       const metricsMatch =
         threatRange >= range[0] && threatRange <= range[1] &&
         threatSpeed >= velocity[0] && threatSpeed <= velocity[1] &&
-        threatWeight >= weight[0] && threatWeight <= weight[1];
+        threatWarhead >= weight[0] && threatWarhead <= weight[1];
 
       if (!metricsMatch) return false;
 
