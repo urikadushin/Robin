@@ -36,7 +36,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileNam
         const baseUrl = '/api/data/Images';
         const type = img.image_type;
         const filename = img.image_path || '';
-        const mName = missileName.toUpperCase();
+        const mName = missileName.replace(/\s+/g, '').toUpperCase();
 
         let path = '';
         if (type === 'executiveSummary') {
