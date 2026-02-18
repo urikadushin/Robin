@@ -49,7 +49,7 @@ export const mapBackendToFrontend = (missile: any, weightAndSize: any[], aerodyn
         maxRange: parseFloat(getVal('maxRange') || maxRng.toString() || '0'),
         operationalRange: parseFloat(getVal('operationalRange') || getVal('maxRange') || maxRng.toString() || '0'),
         speed: performance?.[0]?.velEndOfBurn ? `${performance[0].velEndOfBurn} m/s` : (maxVel > 0 ? `${maxVel} m/s` : 'Unknown'),
-        weight: (getVal('weight') || getVal('launchWeight')) ? `${getVal('weight') || getVal('launchWeight')} kg` : 'Unknown',
+        weight: (getVal(['weight', 'launchWeight', 'launch_weight'])) ? `${getVal(['weight', 'launchWeight', 'launch_weight'])} kg` : 'Unknown',
         countries: missile.family_type || 'Unknown',
         manufacturer: missile.manufacturer || getVal('manufacturer') || 'Unknown',
         warhead: missile.explosive_type || 'Unknown',
