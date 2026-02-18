@@ -23,8 +23,9 @@ const getDynamicColor = (name: string): string => {
 };
 
 export const mapBackendToFrontend = (missile: any, weightAndSize: any[], aerodynamics: any[], performance: any[] = [], engines: any[] = []): ThreatData => {
-    const getVal = (genName: string) => {
-        const item = weightAndSize.find(w => w.generic_name === genName);
+    const getVal = (genNames: string | string[]) => {
+        const names = Array.isArray(genNames) ? genNames : [genNames];
+        const item = weightAndSize.find(w => names.includes(w.generic_name));
         return item ? item.property_value : undefined;
     };
 
@@ -60,10 +61,10 @@ export const mapBackendToFrontend = (missile: any, weightAndSize: any[], aerodyn
         rvDesignName: missile.content_rv_file_name || '',
 
         // Tech View
-        length: getVal('totalLength'),
-        diameter: getVal('d'),
-        launchWeight: getVal('weight') || getVal('launchWeight'),
-        payloadWeight: getVal('wh_weight'),
+        length: getVal(['totalLength', 'length']),
+        diameter: getVal(['d', 'diameter']),
+        launchWeight: getVal(['launchWeight', 'weight', 'launch_weight']),
+        payloadWeight: getVal(['wh_weight', 'payload_weight']),
 
         // Performance
         maxAltitude: maxAlt > 0 ? maxAlt.toString() : undefined,

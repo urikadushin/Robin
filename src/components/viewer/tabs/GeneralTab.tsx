@@ -91,8 +91,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ threat, layout = 'data',
                 <div className="hidden lg:block w-[1px] bg-slate-200 self-stretch my-10 opacity-60"></div>
 
                 {/* Right Side: Image Carousel */}
-                <div className="flex-1 lg:pl-12 flex flex-col py-10 min-h-[500px]">
-                    <div className="w-full flex-1 flex flex-col sticky top-10">
+                <div className="flex-1 lg:pl-12 flex flex-col py-6">
+                    <div className="w-full h-fit flex flex-col sticky top-10">
                         <ImageCarousel
                             images={structureImages}
                             missileName={threat.missile.name}

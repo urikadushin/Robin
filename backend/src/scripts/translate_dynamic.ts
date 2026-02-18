@@ -29,10 +29,19 @@ async function dynamicTranslate() {
         'מ"מ': 'mm',
         'ק"מ': 'km',
         'מ\'': 'm',
-        'טון': 'ton'
+        'טון': 'ton',
+        'עימאד על המשגר': 'Emad on launcher',
+        'עימאד': 'Emad',
+        'משגר': 'Launcher',
+        'שיגור': 'Launch',
+        'טיל': 'Missile',
+        'אינפוגרפיקה איראנית שהוכנה בנובמבר 2024': 'Iranian infographic (Nov 2024)',
+        'שאהד 136': 'Shahed 136',
+        'מתקפה שלישית על ישראל': 'Third attack on Israel',
+        'שונים מרנמים אחרים באיראן': 'Different from other Iranian missiles'
     };
 
-    const tables = ['massmomentandxcg', 'weightandsize', 'aerodynamic', 'missiles', 'missilelaunchassociation'];
+    const tables = ['massmomentandxcg', 'weightandsize', 'aerodynamic', 'missiles', 'missilelaunchassociation', 'images'];
 
     try {
         const connection = await pool.getConnection();

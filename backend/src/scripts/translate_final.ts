@@ -23,10 +23,20 @@ async function finalCleanup() {
         'מ"מ': 'mm',
         'ק"מ': 'km',
         'מ\'': 'm',
-        'טון': 'ton'
+        'טון': 'ton',
+        'עימאד על המשגר': 'Emad on launcher',
+        'אינפוגרפיקה של הטיל עימאד': 'Emad missile infographic',
+        'בולבה משוגר מצוללת יורי דולגורוקי': 'Bulava launched from Yuri Dolgorukiy submarine',
+        'בולבה': 'Bulava',
+        'עימאד': 'Emad',
+        'משגר': 'Launcher',
+        'שיגור': 'Launch',
+        'צוללת': 'Submarine',
+        'טיל': 'Missile',
+        'אינפוגרפיקה': 'Infographic'
     };
 
-    const tables = ['massmomentandxcg', 'weightandsize', 'aerodynamic', 'missiles', 'missilelaunchassociation'];
+    const tables = ['massmomentandxcg', 'weightandsize', 'aerodynamic', 'missiles', 'missilelaunchassociation', 'images'];
 
     try {
         const connection = await pool.getConnection();
@@ -52,7 +62,6 @@ async function finalCleanup() {
 
                     for (const he of sortedHe) {
                         const en = components[he];
-                        // Use regex for word boundaries or just global replace if safe
                         newValue = newValue.split(he).join(en);
                     }
 

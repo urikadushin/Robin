@@ -9,9 +9,17 @@ interface TechTabProps {
 export const TechTab: React.FC<TechTabProps> = ({ threat }) => {
     const { missile, engine, weightAndSize = [] } = threat;
 
-    const getVal = (genName: string) => {
-        const item = weightAndSize.find((w: WeightAndSize) => w.generic_name === genName);
-        return item ? item.property_value : null;
+    const getVal = (genNames: string | string[]) => {
+        const names = Array.isArray(genNames) ? genNames : [genNames];
+        // 1. Try generic names
+        const item = weightAndSize.find((w: WeightAndSize) => names.includes(w.generic_name));
+        if (item) return item.property_value;
+
+        // 2. Try description as fallback (if generic_name is null)
+        const descMatch = weightAndSize.find((w: WeightAndSize) => names.some(n => w.description?.toLowerCase().includes(n.toLowerCase())));
+        if (descMatch) return descMatch.property_value;
+
+        return null;
     };
 
     const Section = ({ title, icon_color, children }: { title: string, icon_color: string, children: React.ReactNode }) => (
@@ -41,23 +49,14 @@ export const TechTab: React.FC<TechTabProps> = ({ threat }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-10 animate-in fade-in duration-700" style={{ fontFamily: "'Inter', sans-serif" }}>
             {/* Physical Dimensions */}
             <Section title="Structural Geometry" icon_color="text-[#227d8d]">
-                <Row label="Total Length" value={getVal('totalLength')} unit="M" />
-                <Row label="Body Diameter" value={getVal('d')} unit="M" />
-                <Row label="Weapon Span" value={getVal('span')} unit="M" />
-                <Row label="Launch Mass" value={getVal('launchWeight')} unit="KG" />
-                <Row label="Payload Mass" value={getVal('wh_weight')} unit="KG" />
-                <Row label="Section Count" value={getVal('stage_number') || missile.num_of_stages} />
+                <Row label="Total Length" value={getVal(['totalLength', 'length'])} unit="M" />
+                <Row label="Body Diameter" value={getVal(['d', 'diameter'])} unit="M" />
+                <Row label="Weapon Span" value={getVal(['span', 'span'])} unit="M" />
+                <Row label="Launch Mass" value={getVal(['launchWeight', 'launch_weight'])} unit="KG" />
+                <Row label="Payload Mass" value={getVal(['wh_weight'])} unit="KG" />
+                <Row label="Section Count" value={getVal(['stage_number']) || missile.num_of_stages} />
             </Section>
 
-            {/* Propulsion System */}
-            <Section title="Propulsion Matrix" icon_color="text-[#6b788e]">
-                <Row label="Motor Variant" value={engine?.type || 'STANDARD'} />
-                <Row label="Nominal Thrust" value={engine?.thrust} unit="KN" />
-                <Row label="Spec Impulse" value={engine?.isp0} unit="SEC" />
-                <Row label="Activation Lvl" value={engine?.tburn} unit="SEC" />
-                <Row label="Propellant Mass" value={engine?.mass_propelant} unit="KG" />
-                <Row label="Burn Profile" value={engine?.thrust_profile_file_name ? 'AVAILABLE' : 'INTERNAL'} />
-            </Section>
 
             {/* Systems & Logic */}
             <Section title="Logic & Avionics" icon_color="text-[#6b788e]">

@@ -11,6 +11,7 @@ export const ViewerTabs: React.FC<ViewerTabsProps> = ({ activeTab, onTabChange }
         { id: 'general', label: 'General Information' },
         { id: 'structural', label: 'Structural View' },
         { id: 'tech', label: 'Tech View' },
+        { id: 'motor', label: 'Motor' },
         { id: 'rcs', label: 'RCS' },
         { id: 'aero', label: 'Aero' },
         { id: 'performance', label: 'Performance' },

@@ -58,16 +58,18 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, missileNam
     const prev = () => setCurrentIndex((prev) => (prev - 1 + filteredImages.length) % filteredImages.length);
 
     return (
-        <div className="flex flex-col h-full bg-[#FAFAFA] rounded-[16px] border border-[#E5E5E5]" >
+        <div className="flex flex-col bg-[#FAFAFA] rounded-[16px] border border-[#E5E5E5] overflow-hidden" >
             {/* Header portion of the card */}
-            <div className="px-8 pt-8 pb-4 flex flex-col items-center gap-1 text-center">
-                <h3 className="text-[18px] font-bold text-[#111827] uppercase tracking-wide">
+            <div className="px-6 pt-6 pb-2 flex flex-col items-center gap-1 text-center">
+                <h3 className="text-[16px] font-bold text-[#111827] uppercase tracking-wide">
                     {missileName} Gallery
                 </h3>
-                <p className="text-[13px] font-normal text-[#6B7280]">Description regarding this specific picture if needed</p>
+                <p className="text-[12px] font-normal text-[#6B7280]">
+                    {currentImage.image_description || "Detailed visual representation for tactical analysis"}
+                </p>
             </div>
 
-            <div className="flex-1 flex items-center justify-center relative group px-4 pb-8" >
+            <div className="h-[320px] flex items-center justify-center relative group px-6 pb-6" >
                 <div className="relative w-full h-full flex items-center justify-center">
                     <img
                         src={getImageUrl(currentImage)}

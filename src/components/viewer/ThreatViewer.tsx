@@ -6,6 +6,7 @@ import { ViewerTabs } from './ViewerTabs';
 import { GeneralTab } from './tabs/GeneralTab';
 import { PerformanceTab } from './tabs/PerformanceTab';
 import { TechTab } from './tabs/TechTab';
+import { MotorTab } from './tabs/MotorTab';
 import { AeroTab } from './tabs/AeroTab';
 import { MassPropertiesTab } from './tabs/MassPropertiesTab';
 import { RcsTab } from './tabs/RcsTab';
@@ -59,7 +60,7 @@ export const ThreatViewer: React.FC<ThreatViewerProps> = ({ threat, onClose, onE
                                 <h1 className="text-3xl font-bold text-[#144a54] leading-none tracking-tight">{threat.missile.name}</h1>
                                 <div className="flex items-center gap-2 mt-2">
                                     <svg className="w-3 h-3 text-[#6b788e]" fill="currentColor" viewBox="0 0 24 24"><path d="M2.5 19.6L3.8 20.9 9.4 15.3 11.2 17.1 2.9 25.4 1 23.5 9.3 15.2 6.5 12.4 2.5 19.6ZM15.3 3.6L16.4 2.5 21.6 7.7 20.5 8.9 16.9 8.2 12 13.1 13.1 12 8.2 16.9 8.9 20.5 7.7 21.6 2.5 16.4 3.6 15.3 11.3 13 13 11.3 15.3 3.6Z" /></svg>
-                                    <span className="text-[12px] font-medium text-[#6b788e] tracking-wide">Missile</span>
+                                    <span className="text-[12px] font-medium text-[#6b788e] tracking-wide">{threat.missile.type || 'Missile'}</span>
                                 </div>
                             </div>
                             <div className="flex-1">
@@ -111,6 +112,7 @@ export const ThreatViewer: React.FC<ThreatViewerProps> = ({ threat, onClose, onE
                             {activeTab === 'general' && <GeneralTab threat={threat} layout="data" tab={activeTab} />}
                             {activeTab === 'structural' && <ThreeDViewer missileName={threat.missile.name} assets={threat.images} />}
                             {activeTab === 'tech' && <TechTab threat={threat} />}
+                            {activeTab === 'motor' && <MotorTab threat={threat} />}
                             {activeTab === 'rcs' && <RcsTab threat={threat} />}
                             {activeTab === 'aero' && <AeroTab threat={threat} />}
                             {activeTab === 'performance' && <PerformanceTab threat={threat} />}
