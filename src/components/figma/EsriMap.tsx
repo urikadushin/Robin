@@ -32,12 +32,13 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
       try {
         // Load required ESRI modules from local SDK if available
         // Set up the options to point to our local backend SDK endpoint
-        const [Map, MapView, WebTileLayer, esriConfig] = await loadModules(
+        const [Map, MapView, WebTileLayer, esriConfig, Extent] = await loadModules(
           [
             'esri/Map',
             'esri/views/MapView',
             'esri/layers/WebTileLayer',
-            'esri/config'
+            'esri/config',
+            'esri/geometry/Extent'
           ],
           {
             css: '/api/data/SDK/arcgis_js_v434_api/arcgis_js_v434_api/arcgis_js_api/javascript/4.34/esri/themes/light/main.css',
@@ -70,15 +71,6 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
         });
         newMap.add(boundariesLayer);
 
-        // Define extent constraints so user cannot pan into blank tiles
-        const maxExtent = new Extent({
-          xmin: -25, // West coast of Africa / Europe
-          ymin: 15,  // Sub-Saharan
-          xmax: 65,  // Iran/Afghanistan border
-          ymax: 65,  // Scandinavia
-          spatialReference: { wkid: 4326 }
-        });
-
         // Create the view
         if (mapDiv.current) {
           const newView = new MapView({
@@ -88,7 +80,14 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
             zoom: 4, // Adjusted zoom level to show the entire region
             constraints: {
               minZoom: 4,
-              maxZoom: 11
+              maxZoom: 11,
+              geometry: new Extent({
+                xmin: -18,
+                ymin: 0,
+                xmax: 84,
+                ymax: 65,
+                spatialReference: { wkid: 4326 }
+              })
             },
             ui: {
               components: ['attribution']

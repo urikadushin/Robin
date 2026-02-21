@@ -22,7 +22,7 @@ const Header: React.FC = () => {
         height: '32px'
       }}>
         <img
-          src="/rayven-logo.png"
+          src="/Rayven1.png"
           alt="Logo"
           style={{
             width: '32px',

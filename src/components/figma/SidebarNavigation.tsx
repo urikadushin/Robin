@@ -63,7 +63,7 @@ const SidebarNavigation: React.FC = () => {
         gap: '55px'
       }}>
         <img
-          src="/rayven-logo.png"
+          src="/Rayven1.png"
           alt="logo"
           style={{
             width: '26px',

@@ -84,7 +84,7 @@ export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
 
     const chartData3DOF = useMemo(() => {
         if (is6DOF) return [];
-        return machVec.map((m, i) => {
+        return machVec.map((m: number, i: number) => {
             const point: any = { mach: m };
             coefficients.forEach(c => {
                 const data = parseData((aero as any)[c.key]);
@@ -97,9 +97,9 @@ export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
     const chartData6DOF = useMemo(() => {
         if (!is6DOF) return [];
         // Map Mach vectors to objects containing values for each Alpha slice
-        return machVec.map((m, machIdx) => {
+        return machVec.map((m: number, machIdx: number) => {
             const point: any = { mach: m };
-            alphaVec.forEach((a, alphaIdx) => {
+            alphaVec.forEach((a: number, alphaIdx: number) => {
                 point[`alpha_${a}`] = currentMatrix[alphaIdx] ? currentMatrix[alphaIdx][machIdx] : 0;
             });
             return point;
@@ -192,7 +192,7 @@ export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
                                 {is6DOF ? (
                                     <>
                                         <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '9px', fontWeight: 700 }} />
-                                        {alphaVec.map((a, i) => (
+                                        {alphaVec.map((a: number, i: number) => (
                                             <Line
                                                 key={a}
                                                 type="monotone"
@@ -239,7 +239,7 @@ export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
                                         <th className="p-3 text-left bg-[#f1f5f9] border-r border-[#C7D8E6] w-20">
                                             <div className="text-[8px] text-[#64748b] font-bold leading-tight">MACH \ ALPHA</div>
                                         </th>
-                                        {alphaVec.map((a, i) => (
+                                        {alphaVec.map((a: number, i: number) => (
                                             <th key={i} className="p-2 text-center text-[9px] font-extrabold text-[#144a54] bg-[#f8fafc] border-r border-[#C7D8E6] last:border-r-0">
                                                 {a}°
                                             </th>
@@ -247,7 +247,7 @@ export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {machVec.map((m, i) => (
+                                    {machVec.map((m: number, i: number) => (
                                         <tr key={i} className="hover:bg-[#f8fafc] transition-colors">
                                             <td className="p-2 bg-[#f1f5f9] border-r border-[#C7D8E6] font-bold text-[9px] text-[#144a54]">
                                                 M{m.toFixed(1)}
@@ -260,7 +260,7 @@ export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
                                                 ))
                                             ) : (
                                                 // Handle case where matrix might be arranged differently (Alpha x Mach vs Mach x Alpha)
-                                                alphaVec.map((_, j) => (
+                                                alphaVec.map((_: any, j: number) => (
                                                     <td key={j} className="p-0 border-r border-[#C7D8E6] last:border-r-0">
                                                         <MatrixCell val={currentMatrix[j] ? currentMatrix[j][i] : 0} />
                                                     </td>
@@ -283,7 +283,7 @@ export const AeroTab: React.FC<AeroTabProps> = ({ threat }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {machVec.map((m, i) => (
+                                    {machVec.map((m: number, i: number) => (
                                         <tr key={i} className="hover:bg-slate-50 transition-colors border-b border-[#f1f5f9] last:border-0">
                                             <td className="p-3 font-bold text-[10px] text-[#144a54] bg-[#f8fafc] border-r border-[#C7D8E6]">
                                                 {m.toFixed(1)}

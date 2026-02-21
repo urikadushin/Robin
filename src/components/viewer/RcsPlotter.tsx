@@ -26,9 +26,10 @@ export const RcsPlotter: React.FC<RcsPlotterProps> = ({ performanceData }) => {
 
     const radarLabels = useMemo(() => {
         const selectedRun = performanceData.find(p => p.perfIndex === selectedPerfId);
-        if (selectedRun?.rcs && selectedRun.rcs.length > 0) {
+        if ((selectedRun as any)?.rcs && (selectedRun as any).rcs.length > 0) {
             // Take the first RCS entry's radars string
-            const radarsStr = selectedRun.rcs[0].radars || '';
+            const firstRcs = (selectedRun as any).rcs[0];
+            const radarsStr = firstRcs.radars || '';
             const names = radarsStr.split(/\s+/).filter((n: string) => n.length > 0);
             return {
                 rcs1: names[0] || 'Radar 1',

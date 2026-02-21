@@ -12,7 +12,7 @@ export const TechTab: React.FC<TechTabProps> = ({ threat }) => {
     const getVal = (genNames: string | string[]) => {
         const names = Array.isArray(genNames) ? genNames : [genNames];
         // 1. Try generic names
-        const item = weightAndSize.find((w: WeightAndSize) => names.includes(w.generic_name));
+        const item = weightAndSize.find((w: WeightAndSize) => names.includes(w.generic_name || ''));
         if (item) return item.property_value;
 
         // 2. Try description as fallback (if generic_name is null)
