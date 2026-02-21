@@ -8,7 +8,7 @@ interface NavButtonProps {
 
 const NavButton: React.FC<NavButtonProps> = ({ icon, isSelected, onClick }) => {
   return (
-    <div 
+    <div
       onClick={onClick}
       style={{
         width: '40px',
@@ -32,9 +32,9 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, isSelected, onClick }) => {
         }
       }}
     >
-      <img 
-        src={icon} 
-        alt="nav icon" 
+      <img
+        src={icon}
+        alt="nav icon"
         style={{
           width: '24px',
           height: '24px',
@@ -62,32 +62,33 @@ const SidebarNavigation: React.FC = () => {
         alignItems: 'center',
         gap: '55px'
       }}>
-        <img 
-          src="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/image-9.png" 
+        <img
+          src="/rayven-logo.png"
           alt="logo"
           style={{
             width: '26px',
             height: '31px',
+            objectFit: 'contain'
           }}
         />
-        
+
         <div style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: '24px'
         }}>
-          <NavButton 
+          <NavButton
             icon="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/main-nav.png"
           />
-          <NavButton 
+          <NavButton
             icon="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/wxplore.png"
             isSelected={true}
           />
-          <NavButton 
+          <NavButton
             icon="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/simulati.png"
           />
-          <NavButton 
+          <NavButton
             icon="https://dashboard.codeparrot.ai/api/image/aBtV5y9L86pAlMTH/tabler-s.png"
           />
         </div>

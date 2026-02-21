@@ -30,15 +30,23 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
 
     const initializeMap = async () => {
       try {
-        // Load required ESRI modules
-        const [Map, MapView, TileLayer] = await loadModules(
+        // Load required ESRI modules from local SDK if available
+        // Set up the options to point to our local backend SDK endpoint
+        const [Map, MapView, WebTileLayer, esriConfig] = await loadModules(
           [
             'esri/Map',
             'esri/views/MapView',
-            'esri/layers/TileLayer',
+            'esri/layers/WebTileLayer',
+            'esri/config'
           ],
-          { css: true }
+          {
+            css: '/api/data/SDK/arcgis_js_v434_api/arcgis_js_v434_api/arcgis_js_api/javascript/4.34/esri/themes/light/main.css',
+            url: '/api/data/SDK/arcgis_js_v434_api/arcgis_js_v434_api/arcgis_js_api/javascript/4.34/init.js'
+          }
         );
+
+        // Let the SDK infer its assets path from init.js
+        // If fonts are missing later, we can add esriConfig.fontsUrl back.
 
         if (!mounted || !mapDiv.current) return;
 
@@ -47,19 +55,29 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
         map = newMap;
         mapRef.current = newMap;
 
-        // Add base imagery layer
-        const baseLayer = new TileLayer({
-          url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
+        // Add base imagery layer from local dataroot containing extracted tiles
+        const baseUrl = window.location.origin;
+        const baseLayer = new WebTileLayer({
+          urlTemplate: `${baseUrl}/api/data/Maps/world_imagery/{level}/{col}/{row}.jpg`,
           id: 'base-layer',
         });
         newMap.add(baseLayer);
 
-        // Add boundaries layer
-        const boundariesLayer = new TileLayer({
-          url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer',
+        // Add boundaries layer from local extracted tiles
+        const boundariesLayer = new WebTileLayer({
+          urlTemplate: `${baseUrl}/api/data/Maps/world_boundaries_and_places/{level}/{col}/{row}.png`,
           id: 'boundaries-layer',
         });
         newMap.add(boundariesLayer);
+
+        // Define extent constraints so user cannot pan into blank tiles
+        const maxExtent = new Extent({
+          xmin: -25, // West coast of Africa / Europe
+          ymin: 15,  // Sub-Saharan
+          xmax: 65,  // Iran/Afghanistan border
+          ymax: 65,  // Scandinavia
+          spatialReference: { wkid: 4326 }
+        });
 
         // Create the view
         if (mapDiv.current) {
@@ -68,6 +86,10 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
             map: newMap,
             center: [40, 52], // Centered on Turkey/Middle East as requested
             zoom: 4, // Adjusted zoom level to show the entire region
+            constraints: {
+              minZoom: 4,
+              maxZoom: 11
+            },
             ui: {
               components: ['attribution']
             },

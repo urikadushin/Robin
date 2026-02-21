@@ -15,7 +15,7 @@ declare module 'esri/Map' {
 
 declare module 'esri/views/MapView' {
   import Map from 'esri/Map';
-  
+
   export default class MapView {
     constructor(params: {
       container: HTMLElement | string;
@@ -28,6 +28,25 @@ declare module 'esri/views/MapView' {
     map: Map;
     center: { x: number; y: number };
     zoom: number;
+    destroy(): void;
+    when(callback?: () => void): Promise<void>;
+  }
+}
+
+declare module 'esri/views/SceneView' {
+  import Map from 'esri/Map';
+
+  export default class SceneView {
+    constructor(params: {
+      container: HTMLElement | string;
+      map?: Map;
+      center?: [number, number] | { x: number; y: number };
+      zoom?: number;
+      camera?: any;
+      [key: string]: any;
+    });
+    container: HTMLElement;
+    map: Map;
     destroy(): void;
     when(callback?: () => void): Promise<void>;
   }

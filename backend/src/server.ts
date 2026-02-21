@@ -8,6 +8,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('UNHANDLED REJECTION:', reason);
+});
+
 app.use(cors());
 app.use(express.json());
 
@@ -27,6 +35,7 @@ app.use('/api/data/Trajectories', express.static(`${DATAROOT_PATH}/Trajectories`
 app.use('/api/data/Images', express.static(`${DATAROOT_PATH}/Images`));
 app.use('/api/data/3DModel', express.static(`${DATAROOT_PATH}/3DModel`));
 app.use('/api/data/Maps', express.static(`${DATAROOT_PATH}/Maps`));
+app.use('/api/data/SDK', express.static(`${DATAROOT_PATH}/SDK`));
 
 // Health Check
 app.get('/health', async (req, res) => {

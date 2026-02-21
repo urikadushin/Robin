@@ -12,6 +12,7 @@ import { MassPropertiesTab } from './tabs/MassPropertiesTab';
 import { RcsTab } from './tabs/RcsTab';
 import HeatTab from './tabs/HeatTab';
 import { ThreeDViewer } from './ThreeDViewer';
+import EsriScene from '../figma/EsriScene';
 
 interface ThreatViewerProps {
     threat: FullMissileData;
@@ -119,6 +120,11 @@ export const ThreatViewer: React.FC<ThreatViewerProps> = ({ threat, onClose, onE
                             {activeTab === 'flight' && <PerformanceTab threat={threat} />}
                             {activeTab === 'heat' && <HeatTab threat={threat} />}
                             {activeTab === 'mass' && <MassPropertiesTab threat={threat} />}
+                            {activeTab === 'scene' && (
+                                <div className="h-[600px] w-full rounded-xl overflow-hidden border border-[#E2E8F0] shadow-inner mb-8">
+                                    <EsriScene className="w-full h-full" />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
