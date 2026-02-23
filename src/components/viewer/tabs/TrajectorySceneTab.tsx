@@ -898,7 +898,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                     const showTOF = selectedRun.timeOfFlight !== undefined ? (currentTime >= selectedRun.timeOfFlight) : false;
 
                                     return (
-                                        <div className="grid grid-cols-2 gap-y-3 gap-x-2">
+                                        <div className="grid grid-cols-3 gap-y-3 gap-x-2">
                                             <div>
                                                 <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Apogee</p>
                                                 <p className="text-white text-[20px] font-mono leading-none">{showApogee ? selectedRun.apogeeAlt : '--'} <span className="text-[12px] opacity-60">km</span></p>
@@ -908,12 +908,20 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                                 <p className="text-white text-[20px] font-mono leading-none">{showBurnOut ? selectedRun.timeEndOfBurn : '--'} <span className="text-[12px] opacity-60">s</span></p>
                                             </div>
                                             <div>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Live Range</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{currentPoint?.rangeKm !== undefined ? currentPoint.rangeKm.toFixed(1) : '--'} <span className="text-[12px] opacity-60">km</span></p>
+                                            </div>
+                                            <div>
                                                 <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Separation</p>
                                                 <p className="text-white text-[20px] font-mono leading-none">{showSeparation ? selectedRun.separationTime : '--'} <span className="text-[12px] opacity-60">s</span></p>
                                             </div>
                                             <div>
                                                 <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Time of Flight</p>
                                                 <p className="text-white text-[20px] font-mono leading-none">{showTOF ? selectedRun.timeOfFlight : '--'} <span className="text-[12px] opacity-60">s</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Live Alt</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{currentPoint?.altKm !== undefined ? currentPoint.altKm.toFixed(1) : '--'} <span className="text-[12px] opacity-60">km</span></p>
                                             </div>
                                         </div>
                                     );
