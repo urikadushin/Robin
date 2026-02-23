@@ -917,7 +917,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                             </div>
                                             <div>
                                                 <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Time of Flight</p>
-                                                <p className="text-white text-[20px] font-mono leading-none">{showTOF ? selectedRun.timeOfFlight : '--'} <span className="text-[12px] opacity-60">s</span></p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{currentTime.toFixed(1)} <span className="text-[12px] opacity-60">s</span></p>
                                             </div>
                                             <div>
                                                 <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Live Alt</p>
