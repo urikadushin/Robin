@@ -959,7 +959,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff22" />
                                                 <XAxis dataKey="rangeKm" type="number" domain={['dataMin', 'dataMax']} stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} tickFormatter={(v) => Number(v).toFixed(1)} />
                                                 <YAxis stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} width={35} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#4ecdc4' }} labelFormatter={(v) => `Range: ${Number(v).toFixed(1)} km`} />
+                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#4ecdc4' }} labelFormatter={(v) => `Range: ${Number(v).toFixed(1)} km`} formatter={(value: any) => Number(value).toFixed(3)} />
                                                 <Line type="monotone" dataKey="altKm" stroke="#4ecdc4" strokeWidth={2} dot={false} isAnimationActive={false} />
                                             </LineChart>
                                         </ResponsiveContainer>
@@ -975,7 +975,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff22" />
                                                 <XAxis dataKey="time" stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} tickFormatter={(v) => Number(v).toFixed(1)} />
                                                 <YAxis stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} width={45} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#ff9f43' }} labelFormatter={(v) => `Time: ${Number(v).toFixed(1)} s`} />
+                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#ff9f43' }} labelFormatter={(v) => `Time: ${Number(v).toFixed(1)} s`} formatter={(value: any) => Number(value).toFixed(3)} />
                                                 <Line type="monotone" dataKey="vTotal" name="Velocity" stroke="#ff9f43" strokeWidth={2} dot={false} isAnimationActive={false} />
                                             </LineChart>
                                         </ResponsiveContainer>
@@ -991,7 +991,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff22" />
                                                 <XAxis dataKey="time" stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} tickFormatter={(v) => Number(v).toFixed(1)} />
                                                 <YAxis stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} width={35} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#A3E635' }} labelFormatter={(v) => `Time: ${Number(v).toFixed(1)} s`} />
+                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#A3E635' }} labelFormatter={(v) => `Time: ${Number(v).toFixed(1)} s`} formatter={(value: any) => Number(value).toFixed(3)} />
                                                 <Line type="monotone" dataKey="gamma" name="Gamma" stroke="#A3E635" strokeWidth={2} dot={false} isAnimationActive={false} />
                                             </LineChart>
                                         </ResponsiveContainer>
