@@ -59,6 +59,12 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
     const esriPolylineRef = useRef<any | null>(null);
     const geometryEngineRef = useRef<typeof geometryEngine | null>(null);
 
+    // Dynamic Graphic Refs to prevent render dropping (flickering)
+    const movingMarkerSceneRef = useRef<any>(null);
+    const movingMarkerMapRef = useRef<any>(null);
+    const eventGraphicsSceneRef = useRef<any[]>([]);
+    const eventGraphicsMapRef = useRef<any[]>([]);
+
     // Coordinate State
     const [stage, setStage] = useState<Stage>('setup');
     const [launchPos, setLaunchPos] = useState<{ lat: number, lon: number } | null>(null);
@@ -85,6 +91,8 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
     // Playback state
     const [timeIndex, setTimeIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+    const [selectedRun, setSelectedRun] = useState<any>(null);
 
     // Max Range for current threat (km)
     const maxRange = useMemo(() => {
@@ -325,13 +333,13 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                 } catch (err) {
                     console.warn("Could not calculate geodesic buffer for range circle", err);
                 }
-            }
 
-            // Draw Launch Marker
-            gl.add(new Graphic({
-                geometry: launchPt,
-                symbol: { type: "simple-marker", color: [226, 119, 40], outline: { color: [255, 255, 255], width: 2 }, size: "12px" }
-            }));
+                // Draw Launch Marker
+                gl.add(new Graphic({
+                    geometry: launchPt,
+                    symbol: { type: "simple-marker", color: [226, 119, 40], outline: { color: [255, 255, 255], width: 2 }, size: "12px" }
+                }));
+            }
         }
 
         if (launchPos && targetPos) {
@@ -344,13 +352,13 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                     geometry: { type: "polyline", paths: [[[launchPt.longitude, launchPt.latitude], [targetPt.longitude, targetPt.latitude]]] } as any,
                     symbol: { type: "simple-line", color: [255, 0, 0, 0.8], width: 2, style: "short-dash" }
                 }));
-            }
 
-            // Draw Target Marker
-            gl.add(new Graphic({
-                geometry: targetPt,
-                symbol: { type: "simple-marker", color: [255, 0, 0], outline: { color: [255, 255, 255], width: 2 }, size: "12px" }
-            }));
+                // Draw Target Marker
+                gl.add(new Graphic({
+                    geometry: targetPt,
+                    symbol: { type: "simple-marker", color: [255, 0, 0], outline: { color: [255, 255, 255], width: 2 }, size: "12px" }
+                }));
+            }
         }
     }, [launchPos, targetPos, stage, maxRange]);
 
@@ -381,6 +389,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                     closestRun = run;
                 }
             }
+            setSelectedRun(closestRun);
 
             const path = closestRun.trajectoryRvPath || closestRun.trajectoryBtPath;
             if (!path) throw new Error("No trajectory files found in performance runs.");
@@ -418,7 +427,15 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
 
                 (viewMapRef.current as any).goTo({
                     target: [launchPt, targetPt]
-                }, { speedFactor: 0.7 });
+                }, { speedFactor: 0.7 })
+                    .then(() => {
+                        // Zoom out an extra notch so the markers fit cleanly
+                        if (viewMapRef.current) {
+                            (viewMapRef.current as any).goTo({
+                                scale: (viewMapRef.current as any).scale * 1.5
+                            }, { speedFactor: 1.0 });
+                        }
+                    });
             }
 
         } catch (e: any) {
@@ -433,32 +450,47 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
     useEffect(() => {
         let animationFrameId: number;
         let lastTime = Date.now();
+        let accumulator = 0;
 
         const loop = () => {
             if (isPlaying && data.length > 0 && stage === 'playback') {
                 const now = Date.now();
-                if (now - lastTime > 30) {
+                const deltaTime = now - lastTime;
+                lastTime = now;
+
+                // Adjust accumulator by the playback multiplier
+                accumulator += deltaTime * playbackSpeed;
+
+                // Base speed: 1 data point per ~30ms (about 33 points per second)
+                const targetFrameDelay = 30;
+
+                if (accumulator >= targetFrameDelay) {
+                    const framesToAdvance = Math.floor(accumulator / targetFrameDelay);
+                    accumulator -= framesToAdvance * targetFrameDelay;
+
                     setTimeIndex(prev => {
-                        if (prev >= data.length - 1) {
+                        const next = prev + framesToAdvance;
+                        if (next >= data.length - 1) {
                             setIsPlaying(false);
-                            return prev;
+                            return data.length - 1;
                         }
-                        return prev + 1;
+                        return next;
                     });
-                    lastTime = now;
                 }
+
                 animationFrameId = requestAnimationFrame(loop);
             }
         };
 
         if (isPlaying && stage === 'playback') {
+            lastTime = Date.now();
             animationFrameId = requestAnimationFrame(loop);
         }
 
         return () => {
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
         };
-    }, [isPlaying, data.length, stage]);
+    }, [isPlaying, data.length, stage, playbackSpeed]);
 
 
     // Draw Route Polyline (Playback)
@@ -495,9 +527,30 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
         graphicsLayerRouteRef.current.add(polylineGraphicScene);
 
         graphicsLayerRouteMapRef.current.removeAll();
-        graphicsLayerRouteMapRef.current.addMany([polylineGraphicMap, launchGraphicMap, targetGraphicMap]);
+        graphicsLayerRouteMapRef.current.add(polylineGraphicMap);
 
     }, [data, stage]);
+
+    // Calculate Event Point Times
+    const eventTimes = useMemo(() => {
+        if (!data || data.length === 0 || !selectedRun) return [];
+
+        let apogeeTime = 0;
+        let maxAlt = -1;
+        for (const d of data) {
+            if (d.alt !== undefined && d.alt > maxAlt) {
+                maxAlt = d.alt;
+                apogeeTime = d.time || 0;
+            }
+        }
+
+        const events = [];
+        if (selectedRun.timeEndOfBurn) events.push({ name: 'Burn Out', time: selectedRun.timeEndOfBurn, color: [255, 165, 0] }); // Orange
+        if (selectedRun.separationTime) events.push({ name: 'Separation', time: selectedRun.separationTime, color: [255, 255, 0] }); // Yellow
+        if (apogeeTime > 0) events.push({ name: 'Apogee', time: apogeeTime, color: [0, 255, 255] }); // Cyan
+
+        return events;
+    }, [data, selectedRun]);
 
     // Update Marker position based on timeIndex (Playback)
     useEffect(() => {
@@ -507,23 +560,66 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
         const ptData = data[timeIndex];
         if (!ptData) return;
 
-        const pointGraphicScene = new Graphic({
-            geometry: { type: "point", longitude: ptData.lon, latitude: ptData.lat, z: ptData.alt } as any,
-            symbol: { type: "simple-marker", color: [255, 0, 0], outline: { color: [255, 255, 255], width: 2 }, size: "12px" }
+        // 1. Manage Moving Marker (mutate geometry to prevent Esri flickering from re-instantiations)
+        if (!movingMarkerSceneRef.current) {
+            movingMarkerSceneRef.current = new Graphic({
+                geometry: { type: "point", longitude: ptData.lon, latitude: ptData.lat, z: ptData.alt } as any,
+                symbol: { type: "simple-marker", color: [255, 0, 0], outline: { color: [255, 255, 255], width: 2 }, size: "12px" }
+            });
+            graphicsLayerMarkerRef.current.add(movingMarkerSceneRef.current);
+        } else {
+            // Updating geometry directly forces an efficient redraw
+            movingMarkerSceneRef.current.geometry = { type: "point", longitude: ptData.lon, latitude: ptData.lat, z: ptData.alt } as any;
+        }
+
+        if (!movingMarkerMapRef.current) {
+            movingMarkerMapRef.current = new Graphic({
+                geometry: { type: "point", longitude: ptData.lon, latitude: ptData.lat } as any,
+                symbol: { type: "simple-marker", color: [255, 0, 0], outline: { color: [255, 255, 255], width: 2 }, size: "10px" }
+            });
+            graphicsLayerMarkerMapRef.current.add(movingMarkerMapRef.current);
+        } else {
+            movingMarkerMapRef.current.geometry = { type: "point", longitude: ptData.lon, latitude: ptData.lat } as any;
+        }
+
+        // 2. Manage Static Event Pins
+        const currentTime = ptData.time || 0;
+        const sceneGraphics: any[] = [];
+        const mapGraphics: any[] = [];
+
+        eventTimes.forEach(ev => {
+            if (currentTime >= ev.time) {
+                // Find point closest to event time
+                const evPt = data.reduce((prev, curr) => Math.abs((curr.time || 0) - ev.time) < Math.abs((prev.time || 0) - ev.time) ? curr : prev);
+
+                sceneGraphics.push(new Graphic({
+                    geometry: { type: "point", longitude: evPt.lon, latitude: evPt.lat, z: evPt.alt } as any,
+                    symbol: { type: "simple-marker", style: "diamond", color: ev.color, outline: { color: [255, 255, 255], width: 1 }, size: "14px" },
+                }));
+                sceneGraphics.push(new Graphic({
+                    geometry: { type: "point", longitude: evPt.lon, latitude: evPt.lat, z: (evPt.alt || 0) + 50000 } as any, // Float text above pin
+                    symbol: { type: "text", color: "white", haloColor: "black", haloSize: "1px", text: ev.name, font: { size: 10, weight: "bold" } } as any
+                }));
+
+                mapGraphics.push(new Graphic({
+                    geometry: { type: "point", longitude: evPt.lon, latitude: evPt.lat } as any,
+                    symbol: { type: "simple-marker", style: "diamond", color: ev.color, outline: { color: [255, 255, 255], width: 1 }, size: "10px" },
+                }));
+            }
         });
 
-        const pointGraphicMap = new Graphic({
-            geometry: { type: "point", longitude: ptData.lon, latitude: ptData.lat } as any,
-            symbol: { type: "simple-marker", color: [255, 0, 0], outline: { color: [255, 255, 255], width: 2 }, size: "10px" }
-        });
+        // Only swap events inside the layer if the count changed (e.g if we scrubbing across a threshold)
+        if (sceneGraphics.length !== eventGraphicsSceneRef.current.length) {
+            graphicsLayerMarkerRef.current.removeMany(eventGraphicsSceneRef.current);
+            graphicsLayerMarkerRef.current.addMany(sceneGraphics);
+            eventGraphicsSceneRef.current = sceneGraphics;
 
-        graphicsLayerMarkerRef.current.removeAll();
-        graphicsLayerMarkerRef.current.add(pointGraphicScene);
+            graphicsLayerMarkerMapRef.current.removeMany(eventGraphicsMapRef.current);
+            graphicsLayerMarkerMapRef.current.addMany(mapGraphics);
+            eventGraphicsMapRef.current = mapGraphics;
+        }
 
-        graphicsLayerMarkerMapRef.current.removeAll();
-        graphicsLayerMarkerMapRef.current.add(pointGraphicMap);
-
-    }, [timeIndex, data, stage]);
+    }, [timeIndex, data, stage, eventTimes]);
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setIsPlaying(false);
@@ -554,10 +650,16 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                             setTimeIndex(0);
                             setIsPlaying(false);
                             setClickStep(0);
+                            setSelectedRun(null);
                             if (graphicsLayerRouteRef.current) graphicsLayerRouteRef.current.removeAll();
                             if (graphicsLayerMarkerRef.current) graphicsLayerMarkerRef.current.removeAll();
                             if (graphicsLayerRouteMapRef.current) graphicsLayerRouteMapRef.current.removeAll();
                             if (graphicsLayerMarkerMapRef.current) graphicsLayerMarkerMapRef.current.removeAll();
+
+                            movingMarkerSceneRef.current = null;
+                            movingMarkerMapRef.current = null;
+                            eventGraphicsSceneRef.current = [];
+                            eventGraphicsMapRef.current = [];
                         }} className="pointer-events-auto bg-white/10 hover:bg-[#227d8d] border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
                             <SkipBack className="w-4 h-4" />
                             Back to Setup
@@ -578,12 +680,14 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
 
                 <div className="relative w-full h-full">
 
-                    {/* 3D Scene - Absolute left 2/3 */}
+                    {/* 3D Scene - Absolute left 60% */}
                     <div ref={sceneDiv}
-                        className="absolute left-0 top-0 transition-all duration-500 rounded-xl overflow-hidden shadow-sm border border-[#E2E8F0] bg-[#0d2232]"
+                        className="absolute transition-all duration-500 rounded-xl overflow-hidden shadow-sm border border-[#E2E8F0] bg-[#0d2232]"
                         style={{
-                            width: 'calc(66.666% - 12px)',
-                            height: '100%',
+                            left: 0,
+                            top: 0,
+                            width: stage === 'setup' ? 'calc(66.666% - 12px)' : 'calc(60% - 12px)',
+                            height: stage === 'setup' ? '100%' : 'calc(60% - 12px)',
                             opacity: stage === 'setup' ? 0 : 1,
                             pointerEvents: stage === 'setup' ? 'none' : 'auto',
                             zIndex: stage === 'setup' ? 1 : 10
@@ -594,12 +698,12 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         </div>
                     </div>
 
-                    {/* 2D Map - Absolute. Left 2/3 (Setup) -> Bottom Right 1/3 (Playback) */}
+                    {/* 2D Map - Absolute. Left 2/3 (Setup) -> Bottom Left 60% (Playback) */}
                     <div className="absolute transition-all duration-500 rounded-xl overflow-hidden shadow-sm border border-[#E2E8F0] z-20 bg-[#0d2232]"
                         style={{
                             ...(stage === 'setup'
                                 ? { left: 0, top: 0, width: 'calc(66.666% - 12px)', height: '100%', backgroundColor: '#0d2232' }
-                                : { left: 'calc(66.666% + 12px)', top: 'calc(50% + 12px)', width: 'calc(33.333% - 12px)', height: 'calc(50% - 12px)', backgroundColor: '#0d2232' })
+                                : { left: 0, top: 'calc(60% + 12px)', width: 'calc(60% - 12px)', height: 'calc(40% - 12px)', backgroundColor: '#0d2232' })
                         }}
                     >
                         <div ref={mapDiv} className="w-full h-full" />
@@ -722,6 +826,35 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                 </div>
                             </div>
 
+                            {/* Dynamic Range and Azimuth Display */}
+                            {launchPos && (
+                                <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <span className="text-[10px] uppercase text-slate-500 font-bold block mb-1">Range</span>
+                                            <span className="font-mono text-sm text-slate-700 font-bold">
+                                                {(() => {
+                                                    const activeTarget = (clickStep === 1 && hoverPos) ? hoverPos : targetPos;
+                                                    if (!activeTarget) return '--- km';
+                                                    const dist = calculateHaversineDistance(launchPos.lat, launchPos.lon, activeTarget.lat, activeTarget.lon);
+                                                    return `${(dist).toFixed(1)} km`;
+                                                })()}
+                                            </span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <span className="text-[10px] uppercase text-slate-500 font-bold block mb-1">Azimuth</span>
+                                            <span className="font-mono text-sm text-slate-700 font-bold">
+                                                {(() => {
+                                                    const activeTarget = (clickStep === 1 && hoverPos) ? hoverPos : targetPos;
+                                                    if (!activeTarget) return '---°';
+                                                    return `${calculateBearing(launchPos.lat, launchPos.lon, activeTarget.lat, activeTarget.lon).toFixed(1)}°`;
+                                                })()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="pt-4 mt-2 shrink-0 border-t border-gray-100">
                                 <button
                                     onClick={handleLaunch}
@@ -741,11 +874,52 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         </div>
                     </div>
 
-                    {/* Playback Details Panel (Threat Model) - Absolute right config area top half */}
-                    <div className="absolute right-0 top-0 transition-all duration-500 z-10 flex flex-col"
+                    {/* Performance Stats Data Card - Top Right 40% (Playback only) */}
+                    <div className="absolute transition-all duration-500 z-10 flex flex-col"
                         style={{
-                            width: 'calc(33.333% - 12px)',
-                            height: 'calc(50% - 12px)',
+                            left: 'calc(60% + 12px)',
+                            top: 0,
+                            width: 'calc(40% - 12px)',
+                            height: 'calc(30% - 12px)',
+                            opacity: stage === 'playback' ? 1 : 0,
+                            pointerEvents: stage === 'playback' ? 'auto' : 'none',
+                            transform: stage === 'playback' ? 'translateX(0)' : 'translateX(20px)'
+                        }}
+                    >
+                        <div className="w-full h-full bg-[#144a54] relative flex flex-col justify-start rounded-xl border border-[#0d343b] shadow-sm overflow-hidden p-4">
+                            <h3 className="text-white font-bold text-[16px] drop-shadow-md mb-3 uppercase tracking-wider">Mission Statistics</h3>
+                            {selectedRun ? (
+                                <div className="grid grid-cols-2 gap-y-3 gap-x-2">
+                                    <div>
+                                        <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Apogee</p>
+                                        <p className="text-white text-[20px] font-mono leading-none">{selectedRun.apogeeAlt !== undefined ? selectedRun.apogeeAlt : '--'} km</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Burn Out</p>
+                                        <p className="text-white text-[20px] font-mono leading-none">{selectedRun.timeEndOfBurn !== undefined ? selectedRun.timeEndOfBurn : '--'} s</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Separation</p>
+                                        <p className="text-white text-[20px] font-mono leading-none">{selectedRun.separationTime !== undefined ? selectedRun.separationTime : '--'} s</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Time of Flight</p>
+                                        <p className="text-white text-[20px] font-mono leading-none">{selectedRun.timeOfFlight !== undefined ? selectedRun.timeOfFlight : '--'} s</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-white/60 italic text-sm">No performance run matched</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Playback Details Panel (Threat Model) - Absolute right config area bottom half */}
+                    <div className="absolute transition-all duration-500 z-10 flex flex-col"
+                        style={{
+                            left: 'calc(60% + 12px)',
+                            top: 'calc(30% + 12px)',
+                            width: 'calc(40% - 12px)',
+                            height: 'calc(70% - 12px)',
                             opacity: stage === 'playback' ? 1 : 0,
                             pointerEvents: stage === 'playback' ? 'auto' : 'none',
                             transform: stage === 'playback' ? 'translateX(0)' : 'translateX(20px)'
@@ -755,38 +929,57 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                             <div className="absolute inset-x-0 top-0 p-4 z-10 pointer-events-none bg-gradient-to-b from-black/50 to-transparent flex justify-between">
                                 <h3 className="text-white font-bold text-[16px] drop-shadow-md">Flight Telemetry: {threat.missile.name}</h3>
                             </div>
-                            <div className="flex-1 w-full relative pt-12 p-4 flex flex-col gap-4 min-h-0 overflow-y-auto">
-                                <div className="flex-1 min-h-[140px] flex flex-col">
-                                    <h4 className="text-white/60 text-xs font-bold mb-2 uppercase tracking-wide">Altitude Profile (km)</h4>
+                            <div className="flex-1 w-full relative pt-12 p-4 flex flex-col gap-3 min-h-0 overflow-y-auto">
+
+                                {/* Graph 1: Alt vs Range */}
+                                <div className="flex-1 min-h-[80px] flex flex-col">
+                                    <h4 className="text-white/60 text-[10px] font-bold mb-1 uppercase tracking-wide">Altitude vs Range (km)</h4>
                                     <div className="flex-1 min-h-0">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={data.slice(0, timeIndex + 1).map(d => ({ ...d, altKm: d.alt !== undefined ? d.alt / 1000 : 0 }))}>
+                                            <LineChart data={data.slice(0, timeIndex + 1)}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff22" />
-                                                <XAxis dataKey="time" stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} />
-                                                <YAxis stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} width={45} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#4ecdc4' }} />
+                                                <XAxis dataKey="rangeKm" type="number" domain={['dataMin', 'dataMax']} stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} tickFormatter={(v) => Number(v).toFixed(1)} />
+                                                <YAxis stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} width={35} />
+                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#4ecdc4' }} labelFormatter={(v) => `Range: ${Number(v).toFixed(1)} km`} />
                                                 <Line type="monotone" dataKey="altKm" stroke="#4ecdc4" strokeWidth={2} dot={false} isAnimationActive={false} />
                                             </LineChart>
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
-                                <div className="flex-1 min-h-[140px] flex flex-col">
-                                    <h4 className="text-white/60 text-xs font-bold mb-2 uppercase tracking-wide">Velocity (m/s)</h4>
+
+                                {/* Graph 2: Total Velocity */}
+                                <div className="flex-1 min-h-[80px] flex flex-col">
+                                    <h4 className="text-white/60 text-[10px] font-bold mb-1 uppercase tracking-wide">Total Velocity (m/s)</h4>
                                     <div className="flex-1 min-h-0">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <LineChart data={data.slice(0, timeIndex + 1)}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff22" />
-                                                <XAxis dataKey="time" stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} />
+                                                <XAxis dataKey="time" stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} tickFormatter={(v) => Number(v).toFixed(1)} />
                                                 <YAxis stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} width={45} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#ff9f43' }} />
-                                                <Line type="monotone" dataKey="vz" name="Vz" stroke="#ff9f43" strokeWidth={2} dot={false} isAnimationActive={false} />
-                                                <Line type="monotone" dataKey="vx" name="Vx" stroke="#A3E635" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#ff9f43' }} labelFormatter={(v) => `Time: ${Number(v).toFixed(1)} s`} />
+                                                <Line type="monotone" dataKey="vTotal" name="Velocity" stroke="#ff9f43" strokeWidth={2} dot={false} isAnimationActive={false} />
                                             </LineChart>
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
-                            </div>
 
+                                {/* Graph 3: Theta (Pitch Angle) */}
+                                <div className="flex-1 min-h-[80px] flex flex-col">
+                                    <h4 className="text-white/60 text-[10px] font-bold mb-1 uppercase tracking-wide">Pitch Angle (deg)</h4>
+                                    <div className="flex-1 min-h-0">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={data.slice(0, timeIndex + 1)}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff22" />
+                                                <XAxis dataKey="time" stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} tickFormatter={(v) => Number(v).toFixed(1)} />
+                                                <YAxis stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} width={35} />
+                                                <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#A3E635' }} labelFormatter={(v) => `Time: ${Number(v).toFixed(1)} s`} />
+                                                <Line type="monotone" dataKey="theta" name="Theta" stroke="#A3E635" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                            </div>
                         </div>
                     </div>
 
@@ -800,6 +993,9 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         <button onClick={() => { setIsPlaying(false); setTimeIndex(0); }} className="p-2 text-[#6b788e] hover:text-[#144a54] hover:bg-[#E2E8F0] rounded-full transition-colors"><SkipBack className="w-5 h-5" /></button>
                         <button onClick={() => setIsPlaying(!isPlaying)} className="p-3 bg-[#227d8d] text-white hover:bg-[#1a5f6b] rounded-full transition-colors shadow-sm" disabled={data.length === 0}>
                             {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
+                        </button>
+                        <button onClick={() => setPlaybackSpeed(s => s === 1 ? 2 : s === 2 ? 4 : s === 4 ? 0.5 : 1)} className="px-3 py-1 ml-2 bg-[#E2E8F0] text-[#144a54] font-bold rounded-full text-xs hover:bg-[#cbd5e1] transition-colors whitespace-nowrap">
+                            {playbackSpeed}x
                         </button>
                         <div className="flex-1 flex items-center gap-4 px-4">
                             <span className="text-[12px] font-bold text-[#6b788e] w-16 text-right font-mono">{currentPoint?.time?.toFixed(2) || (timeIndex * 0.1).toFixed(2)}s</span>
@@ -957,11 +1153,24 @@ function transformTrajectory(fileText: string, launch: { lat: number, lon: numbe
             altMeters = altMeters * 1000;
         }
 
+        const rangeKm = distFromStartMeters / 1000;
+        const vx = pt.vx || 0;
+        const vy = pt.vy || 0;
+        const vz = pt.vz || 0;
+        const vTotal = Math.sqrt(vx * vx + vy * vy + vz * vz);
+
+        const vHorizontal = Math.sqrt(vx * vx + vy * vy);
+        const theta = (vHorizontal === 0 && vz === 0) ? 0 : Math.atan2(vz, vHorizontal) * (180 / Math.PI);
+
         return {
             ...pt,
             lon: (lon2 * 180) / Math.PI,
             lat: (lat2 * 180) / Math.PI,
-            alt: altMeters
+            alt: altMeters,
+            altKm: altMeters / 1000,
+            rangeKm,
+            vTotal,
+            theta
         };
     });
 }

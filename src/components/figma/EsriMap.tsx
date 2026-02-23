@@ -64,9 +64,9 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
         });
         newMap.add(baseLayer);
 
-        // Add boundaries layer from local extracted tiles
+        // Add boundaries layer from online ESRI service (local tiles missing west view)
         const boundariesLayer = new WebTileLayer({
-          urlTemplate: `${baseUrl}/api/data/Maps/world_boundaries_and_places/{level}/{col}/{row}.png`,
+          urlTemplate: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{level}/{row}/{col}',
           id: 'boundaries-layer',
         });
         newMap.add(boundariesLayer);
@@ -76,16 +76,16 @@ const EsriMap: React.FC<EsriMapProps> = ({ className }) => {
           const newView = new MapView({
             container: mapDiv.current,
             map: newMap,
-            center: [40, 52], // Centered on Turkey/Middle East as requested
-            zoom: 4, // Adjusted zoom level to show the entire region
+            center: [28, 44], // North-West focus
+            zoom: 5, // Initial zoom of 5
             constraints: {
-              minZoom: 4,
+              minZoom: 5, // Allow zooming out to 5
               maxZoom: 11,
               geometry: new Extent({
-                xmin: -18,
-                ymin: 0,
-                xmax: 84,
-                ymax: 65,
+                xmin: 25,
+                ymin: 25,
+                xmax: 50,
+                ymax: 45,
                 spatialReference: { wkid: 4326 }
               })
             },

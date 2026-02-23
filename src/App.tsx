@@ -7,7 +7,7 @@ import { api } from './services/api';
 import { mapFrontendToBackend, mapBackendToFrontend } from './utils/threatMapper';
 import { ComparisonView } from './components/ComparisonView';
 import { ThreatViewer } from './components/viewer/ThreatViewer';
-
+import { TrajectorySceneTab } from './components/viewer/tabs/TrajectorySceneTab';
 export interface ThreatData {
   id: string;
   name: string;
@@ -208,6 +208,27 @@ function App() {
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
   const [viewingThreat, setViewingThreat] = useState<import('../backend/src/models/FullMissileModel').FullMissileData | undefined>(undefined);
 
+  const [isTrajectoriesOpen, setIsTrajectoriesOpen] = useState(false);
+  const [trajectoryThreat, setTrajectoryThreat] = useState<import('../backend/src/models/FullMissileModel').FullMissileData | undefined>(undefined);
+
+  const openTrajectories = async (id?: string) => {
+    try {
+      const targetId = id || (threats.length > 0 ? threats[0].id : null);
+      if (!targetId) return;
+
+      const numId = parseInt(targetId);
+      if (!isNaN(numId)) {
+        const fullData = await api.getFullThreat(numId);
+        setTrajectoryThreat(fullData);
+        setIsTrajectoriesOpen(true);
+      } else {
+        console.warn("Cannot open trajectories for non-numeric ID:", targetId);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   React.useEffect(() => {
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
   }, [darkMode]);
@@ -402,7 +423,7 @@ function App() {
         </div>
         {/* Sidebar */}
         <div style={{ pointerEvents: 'auto', position: 'absolute', top: 56, left: 0, bottom: 0 }}>
-          <Sidebar />
+          <Sidebar onOpenTrajectories={() => openTrajectories()} />
         </div>
         {/* FiltersBar */}
         <div style={{ pointerEvents: 'auto', position: 'absolute', top: 56, left: 58, right: 0 }}>
@@ -470,16 +491,26 @@ function App() {
           threat={viewingThreat}
           onClose={() => setViewingThreat(undefined)}
           onEdit={() => {
-            // Logic to switch to edit mode if needed
-            // For now just close viewer and open editor?
-            // Need to map FullMissileData back to ThreatData for editor or make Editor support FullMissileData
-            // Given current architecture, let's just log or implement later
             console.log("Edit requested from viewer");
             setViewingThreat(undefined);
-            // We need to find the ThreatData to edit. 
             const threatToEdit = threats.find(t => t.id === viewingThreat.missile.id?.toString());
             if (threatToEdit) handleEditThreat(threatToEdit);
           }}
+        />
+      )}
+
+      {/* Trajectories Scene Modal */}
+      {isTrajectoriesOpen && trajectoryThreat && (
+        <TrajectorySceneTab
+          threat={trajectoryThreat}
+          onClose={() => setIsTrajectoriesOpen(false)}
+          allThreats={threats
+            .filter(t => {
+              const type = (t.missile || '').toLowerCase();
+              return type.includes('ballistic') || type === 'missile';
+            })
+            .map(t => ({ id: t.id, name: t.name }))}
+          onThreatChange={(id) => openTrajectories(id)}
         />
       )}
     </div>
@@ -519,10 +550,11 @@ function TopBar({ darkMode, setDarkMode }: { darkMode: boolean, setDarkMode: (v:
   );
 }
 
-function Sidebar() {
+function Sidebar({ onOpenTrajectories }: { onOpenTrajectories?: () => void }) {
   return (
     <nav className="sidebar">
       <div className="sidebar__icon" title="Explore">🧭</div>
+      <div className="sidebar__icon" title="Trajectories" onClick={onOpenTrajectories} style={{ cursor: 'pointer' }}>🚀</div>
       <div className="sidebar__icon" title="Settings">⚙️</div>
       <div className="sidebar__icon" title="Help">❓</div>
     </nav>

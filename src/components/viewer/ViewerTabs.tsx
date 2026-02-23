@@ -17,7 +17,6 @@ export const ViewerTabs: React.FC<ViewerTabsProps> = ({ activeTab, onTabChange }
         { id: 'performance', label: 'Performance' },
         { id: 'heat', label: 'Heat Signature' },
         { id: 'mass', label: 'Mass Properties' },
-        { id: 'scene', label: '3D Scene' },
     ];
 
     return (
