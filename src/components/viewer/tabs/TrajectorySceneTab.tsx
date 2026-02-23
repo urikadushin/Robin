@@ -63,6 +63,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
     const [stage, setStage] = useState<Stage>('setup');
     const [launchPos, setLaunchPos] = useState<{ lat: number, lon: number } | null>(null);
     const [targetPos, setTargetPos] = useState<{ lat: number, lon: number } | null>(null);
+    const [hoverPos, setHoverPos] = useState<{ lat: number, lon: number } | null>(null);
     const [clickStep, setClickStep] = useState<0 | 1>(0); // 0 = picking launch, 1 = picking target
 
     // Latest refs to avoid stale closures in ESRI events
@@ -192,6 +193,8 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         map: mapScene,
                         camera: { position: { x: 35.1, y: 29.5, z: 2000000 }, tilt: 0 },
                         environment: { atmosphere: { quality: 'low' }, starsEnabled: false },
+                        alphaCompositingEnabled: true,
+                        background: { color: "transparent" } as any,
                         ui: { components: [] }
                     });
                 }
@@ -203,6 +206,8 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         center: [20.0, 40.0], // Centered roughly over Europe/Med
                         zoom: 4,
                         ui: { components: [] },
+                        alphaCompositingEnabled: true,
+                        background: { color: "transparent" } as any,
                         constraints: {
                             minZoom: 3,
                             maxZoom: 10,
@@ -248,6 +253,17 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                             setClickStep(0); // reset if they click again it sets launch again
                         }
                     });
+
+                    // Track mouse movement for Lat/Lon hover
+                    (viewMapRef.current as any).on('pointer-move', (event: any) => {
+                        const mapPoint = (viewMapRef.current as any).toMap({ x: event.x, y: event.y });
+                        if (mapPoint) {
+                            setHoverPos({ lat: mapPoint.latitude, lon: mapPoint.longitude });
+                        }
+                    });
+                    (viewMapRef.current as any).on('pointer-leave', () => {
+                        setHoverPos(null);
+                    });
                 }
             } catch (err) {
                 console.error("Error loading ESRI modules:", err);
@@ -287,21 +303,29 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
         const ge = geometryEngineRef.current;
         gl.removeAll();
 
-        if (stage !== 'setup') return;
-
         if (launchPos) {
             const launchPt = new Point({ longitude: launchPos.lon, latitude: launchPos.lat });
 
-            // Draw Range Circle (Max Range)
-            const circlePoly = ge.geodesicBuffer(launchPt, maxRange, "kilometers");
-            gl.add(new Graphic({
-                geometry: circlePoly as any,
-                symbol: {
-                    type: "simple-fill",
-                    color: [34, 125, 141, 0.1], // Teal semi-transparent
-                    outline: { color: [34, 125, 141, 0.8], width: 2, style: 'dash' }
+            if (stage === 'setup') {
+                // Draw Range Circle (Max Range)
+                try {
+                    // To avoid drawing massive circles that break WebGL or GeometryEngine, max 20,000 km
+                    const safeRange = Math.min(maxRange, 20000);
+                    const circlePoly = ge.geodesicBuffer(launchPt, safeRange, "kilometers");
+                    if (circlePoly) {
+                        gl.add(new Graphic({
+                            geometry: circlePoly as any,
+                            symbol: {
+                                type: "simple-fill",
+                                color: [34, 125, 141, 0.15],
+                                outline: { color: [34, 125, 141, 0.8], width: 2 }
+                            }
+                        }));
+                    }
+                } catch (err) {
+                    console.warn("Could not calculate geodesic buffer for range circle", err);
                 }
-            }));
+            }
 
             // Draw Launch Marker
             gl.add(new Graphic({
@@ -314,11 +338,13 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
             const launchPt = new Point({ longitude: launchPos.lon, latitude: launchPos.lat });
             const targetPt = new Point({ longitude: targetPos.lon, latitude: targetPos.lat });
 
-            // Draw line
-            gl.add(new Graphic({
-                geometry: { type: "polyline", paths: [[[launchPt.longitude, launchPt.latitude], [targetPt.longitude, targetPt.latitude]]] } as any,
-                symbol: { type: "simple-line", color: [255, 0, 0, 0.8], width: 2, style: "short-dash" }
-            }));
+            if (stage === 'setup') {
+                // Draw line
+                gl.add(new Graphic({
+                    geometry: { type: "polyline", paths: [[[launchPt.longitude, launchPt.latitude], [targetPt.longitude, targetPt.latitude]]] } as any,
+                    symbol: { type: "simple-line", color: [255, 0, 0, 0.8], width: 2, style: "short-dash" }
+                }));
+            }
 
             // Draw Target Marker
             gl.add(new Graphic({
@@ -384,6 +410,17 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                 }, { speedFactor: 0.5 });
             }
 
+            // Zoom 2D map to fit trajectory bounds (adding 1.5x padding buffer)
+            if (viewMapRef.current && esriPointRef.current) {
+                const Point = esriPointRef.current;
+                const launchPt = new Point({ longitude: launchPos.lon, latitude: launchPos.lat });
+                const targetPt = new Point({ longitude: targetPos.lon, latitude: targetPos.lat });
+
+                (viewMapRef.current as any).goTo({
+                    target: [launchPt, targetPt]
+                }, { speedFactor: 0.7 });
+            }
+
         } catch (e: any) {
             console.error(e);
             setError(e.message);
@@ -441,11 +478,24 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
             symbol: { type: "simple-line", color: [34, 125, 141], width: 3 }
         });
 
+        const launchPt = launchPosRef.current ? { longitude: launchPosRef.current.lon, latitude: launchPosRef.current.lat } : { longitude: path[0][0], latitude: path[0][1] };
+        const targetPt = targetPosRef.current ? { longitude: targetPosRef.current.lon, latitude: targetPosRef.current.lat } : { longitude: path[path.length - 1][0], latitude: path[path.length - 1][1] };
+
+        const launchGraphicMap = new Graphic({
+            geometry: { type: "point", ...launchPt } as any,
+            symbol: { type: "simple-marker", color: [226, 119, 40], outline: { color: [255, 255, 255], width: 2 }, size: "12px" }
+        });
+
+        const targetGraphicMap = new Graphic({
+            geometry: { type: "point", ...targetPt } as any,
+            symbol: { type: "simple-marker", color: [255, 0, 0], outline: { color: [255, 255, 255], width: 2 }, size: "12px" }
+        });
+
         graphicsLayerRouteRef.current.removeAll();
         graphicsLayerRouteRef.current.add(polylineGraphicScene);
 
         graphicsLayerRouteMapRef.current.removeAll();
-        graphicsLayerRouteMapRef.current.add(polylineGraphicMap);
+        graphicsLayerRouteMapRef.current.addMany([polylineGraphicMap, launchGraphicMap, targetGraphicMap]);
 
     }, [data, stage]);
 
@@ -494,13 +544,33 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         3D Trajectory Intel
                     </h2>
                 </div>
-                <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition-all rounded-[10px] group">
-                    <span className="text-xl font-light transform group-hover:rotate-90 transition-transform">✕</span>
-                </button>
+                <div className="flex items-center gap-4">
+                    {stage === 'playback' && (
+                        <button onClick={() => {
+                            setStage('setup');
+                            setLaunchPos(null);
+                            setTargetPos(null);
+                            setData([]);
+                            setTimeIndex(0);
+                            setIsPlaying(false);
+                            setClickStep(0);
+                            if (graphicsLayerRouteRef.current) graphicsLayerRouteRef.current.removeAll();
+                            if (graphicsLayerMarkerRef.current) graphicsLayerMarkerRef.current.removeAll();
+                            if (graphicsLayerRouteMapRef.current) graphicsLayerRouteMapRef.current.removeAll();
+                            if (graphicsLayerMarkerMapRef.current) graphicsLayerMarkerMapRef.current.removeAll();
+                        }} className="pointer-events-auto bg-white/10 hover:bg-[#227d8d] border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
+                            <SkipBack className="w-4 h-4" />
+                            Back to Setup
+                        </button>
+                    )}
+                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition-all rounded-[10px] group">
+                        <span className="text-xl font-light transform group-hover:rotate-90 transition-transform">✕</span>
+                    </button>
+                </div>
             </div>
 
             {/* Split View Container using Absolute Positioning for robust ArcGis rendering */}
-            <div className="flex-1 relative p-6 overflow-hidden">
+            <div className="flex-1 relative px-6 py-2 pb-2 overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40 select-none">
                     <div className="absolute -top-[10%] -left-[5%] w-[40%] h-[40%] bg-[#227d8d] blur-[120px] rounded-full animate-pulse" />
                     <div className="absolute -bottom-[10%] right-[10%] w-[45%] h-[45%] bg-[#1a5f6b] blur-[140px] rounded-full" />
@@ -510,7 +580,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
 
                     {/* 3D Scene - Absolute left 2/3 */}
                     <div ref={sceneDiv}
-                        className="absolute left-0 top-0 transition-all duration-500 rounded-xl overflow-hidden shadow-sm border border-[#E2E8F0] bg-[#f1f5f9]"
+                        className="absolute left-0 top-0 transition-all duration-500 rounded-xl overflow-hidden shadow-sm border border-[#E2E8F0] bg-[#0d2232]"
                         style={{
                             width: 'calc(66.666% - 12px)',
                             height: '100%',
@@ -525,14 +595,24 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                     </div>
 
                     {/* 2D Map - Absolute. Left 2/3 (Setup) -> Bottom Right 1/3 (Playback) */}
-                    <div ref={mapDiv}
-                        className="absolute transition-all duration-500 rounded-xl overflow-hidden shadow-sm border border-[#E2E8F0] z-20"
+                    <div className="absolute transition-all duration-500 rounded-xl overflow-hidden shadow-sm border border-[#E2E8F0] z-20 bg-[#0d2232]"
                         style={{
                             ...(stage === 'setup'
-                                ? { left: 0, top: 0, width: 'calc(66.666% - 12px)', height: '100%', backgroundColor: 'transparent' }
-                                : { left: 'calc(66.666% + 12px)', top: 'calc(50% + 12px)', width: 'calc(33.333% - 12px)', height: 'calc(50% - 12px)', backgroundColor: '#f1f5f9' })
+                                ? { left: 0, top: 0, width: 'calc(66.666% - 12px)', height: '100%', backgroundColor: '#0d2232' }
+                                : { left: 'calc(66.666% + 12px)', top: 'calc(50% + 12px)', width: 'calc(33.333% - 12px)', height: 'calc(50% - 12px)', backgroundColor: '#0d2232' })
                         }}
                     >
+                        <div ref={mapDiv} className="w-full h-full" />
+
+                        {/* Hover coordinates overlay */}
+                        {hoverPos && stage === 'setup' && (
+                            <div className="absolute bottom-4 left-4 bg-[#0d2232]/80 backdrop-blur-sm px-3 py-1.5 rounded shadow border border-white/10 text-white font-mono text-[11px] pointer-events-none z-50 flex items-center gap-2">
+                                <MapPin className="w-3 h-3 text-[#4ecdc4]" />
+                                <span>Lat: {hoverPos.lat.toFixed(5)}</span>
+                                <span className="opacity-50">|</span>
+                                <span>Lon: {hoverPos.lon.toFixed(5)}</span>
+                            </div>
+                        )}
                         <div className="absolute inset-x-0 top-0 p-4 z-10 pointer-events-none bg-gradient-to-b from-black/50 to-transparent flex justify-between">
                             <h3 className="text-white font-bold text-[16px] drop-shadow-md">{stage === 'setup' ? 'Select Launch & Target Locations' : '2D Ground Track'}</h3>
                             {stage === 'setup' && <span className="text-white/80 font-mono text-sm drop-shadow-md animate-pulse">Click map to select {clickStep === 0 ? 'Launch' : 'Target'}</span>}
@@ -550,25 +630,25 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         }}
                     >
                         {/* Setup Configuration Panel */}
-                        <div className="w-full h-full bg-white relative flex flex-col rounded-xl border border-[#E2E8F0] shadow-sm overflow-hidden p-6">
-                            <h3 className="text-[#144a54] font-bold text-xl mb-6 border-b border-gray-100 pb-4">Mission Configuration</h3>
+                        <div className="w-full h-full bg-white relative flex flex-col rounded-xl border border-[#E2E8F0] shadow-sm overflow-hidden p-4">
+                            <h3 className="text-[#144a54] font-bold text-lg mb-3 border-b border-gray-100 pb-2">Mission Configuration</h3>
 
-                            <div className="space-y-6 flex-1 overflow-y-auto min-h-0 pr-2 pb-2">
+                            <div className="space-y-3 flex-1 overflow-y-auto min-h-0 pr-2 pb-2">
                                 <div>
-                                    <label className="block text-sm font-semibold text-[#6b788e] mb-2 uppercase tracking-wide">Threat System</label>
+                                    <label className="block text-sm font-semibold text-[#6b788e] mb-1 uppercase tracking-wide">Threat System</label>
                                     <select
                                         title="Select Threat" aria-label="Select Threat"
                                         value={threat.missile.id?.toString() || ''}
                                         onChange={(e) => { if (onThreatChange) onThreatChange(e.target.value); }}
-                                        className="w-full bg-[#f8fafc] text-[#144a54] border border-[#cbd5e1] rounded-lg px-4 py-3 outline-none cursor-pointer focus:ring-2 focus:ring-[#4ecdc4] font-medium"
+                                        className="w-full bg-[#f8fafc] text-[#144a54] border border-[#cbd5e1] rounded-lg px-3 py-2 outline-none cursor-pointer focus:ring-2 focus:ring-[#4ecdc4] font-medium"
                                     >
                                         {allThreats?.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                     </select>
-                                    <p className="text-xs text-slate-500 mt-2 font-mono">Max Range: {maxRange} km</p>
+                                    <p className="text-[11px] text-slate-500 mt-1.5 font-mono">Max Range: {maxRange} km</p>
                                 </div>
 
-                                <div className="p-4 rounded-lg border border-orange-200 bg-orange-50/50">
-                                    <div className="flex items-center justify-between mb-3">
+                                <div className="p-3 rounded-lg border border-orange-200 bg-orange-50/50">
+                                    <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
                                             <CircleDot className="w-4 h-4 text-orange-500" />
                                             <span className="font-bold text-slate-700 text-sm">Launch Position</span>
@@ -579,7 +659,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                             <label className="text-[10px] uppercase text-slate-500 font-bold mb-1">Latitude</label>
                                             <input
                                                 type="number" step="any"
-                                                className="w-full bg-white border border-orange-200 rounded px-2 py-1.5 text-sm font-mono focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
+                                                className="w-full bg-white border border-orange-200 rounded px-2 py-1 text-sm font-mono focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
                                                 placeholder="e.g. 51.76"
                                                 value={launchPos?.lat || ''}
                                                 onChange={(e) => {
@@ -592,7 +672,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                             <label className="text-[10px] uppercase text-slate-500 font-bold mb-1">Longitude</label>
                                             <input
                                                 type="number" step="any"
-                                                className="w-full bg-white border border-orange-200 rounded px-2 py-1.5 text-sm font-mono focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
+                                                className="w-full bg-white border border-orange-200 rounded px-2 py-1 text-sm font-mono focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
                                                 placeholder="e.g. 47.19"
                                                 value={launchPos?.lon || ''}
                                                 onChange={(e) => {
@@ -604,8 +684,8 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                     </div>
                                 </div>
 
-                                <div className="p-4 rounded-lg border border-red-200 bg-red-50/50">
-                                    <div className="flex items-center justify-between mb-3">
+                                <div className="p-3 rounded-lg border border-red-200 bg-red-50/50">
+                                    <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
                                             <MapPin className="w-4 h-4 text-red-500" />
                                             <span className="font-bold text-slate-700 text-sm">Target Position</span>
@@ -642,11 +722,17 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                 </div>
                             </div>
 
-                            <div className="pt-6 mt-4 shrink-0 border-t border-gray-100">
+                            <div className="pt-4 mt-2 shrink-0 border-t border-gray-100">
                                 <button
-                                    disabled={!launchPos || !targetPos}
                                     onClick={handleLaunch}
-                                    className="w-full py-4 bg-[#227d8d] hover:bg-[#1a5f6b] text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={!launchPos || !targetPos || loading}
+                                    className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 transition-all font-bold tracking-wide shadow-sm
+                                        ${(!launchPos || !targetPos)
+                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                                            : loading
+                                                ? 'bg-[#144a54] text-white opacity-80 cursor-wait'
+                                                : 'bg-[#89bdd3] hover:bg-[#227d8d] hover:shadow text-white cursor-pointer active:scale-[0.98]'
+                                        }`}
                                 >
                                     <Send className="w-5 h-5" />
                                     Launch Trajectory
@@ -668,33 +754,18 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         <div className="w-full h-full bg-[#144a54] relative flex flex-col rounded-xl border border-[#0d343b] shadow-sm overflow-hidden min-h-0">
                             <div className="absolute inset-x-0 top-0 p-4 z-10 pointer-events-none bg-gradient-to-b from-black/50 to-transparent flex justify-between">
                                 <h3 className="text-white font-bold text-[16px] drop-shadow-md">Flight Telemetry: {threat.missile.name}</h3>
-                                <button onClick={() => {
-                                    setStage('setup');
-                                    setLaunchPos(null);
-                                    setTargetPos(null);
-                                    setData([]);
-                                    setTimeIndex(0);
-                                    setIsPlaying(false);
-                                    setClickStep(0);
-                                    if (graphicsLayerRouteRef.current) graphicsLayerRouteRef.current.removeAll();
-                                    if (graphicsLayerMarkerRef.current) graphicsLayerMarkerRef.current.removeAll();
-                                    if (graphicsLayerRouteMapRef.current) graphicsLayerRouteMapRef.current.removeAll();
-                                    if (graphicsLayerMarkerMapRef.current) graphicsLayerMarkerMapRef.current.removeAll();
-                                }} className="pointer-events-auto bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded text-xs font-bold transition-colors">
-                                    Back to Setup
-                                </button>
                             </div>
                             <div className="flex-1 w-full relative pt-12 p-4 flex flex-col gap-4 min-h-0 overflow-y-auto">
                                 <div className="flex-1 min-h-[140px] flex flex-col">
-                                    <h4 className="text-white/60 text-xs font-bold mb-2 uppercase tracking-wide">Altitude Profile (m)</h4>
+                                    <h4 className="text-white/60 text-xs font-bold mb-2 uppercase tracking-wide">Altitude Profile (km)</h4>
                                     <div className="flex-1 min-h-0">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={data.slice(0, timeIndex + 1)}>
+                                            <LineChart data={data.slice(0, timeIndex + 1).map(d => ({ ...d, altKm: d.alt !== undefined ? d.alt / 1000 : 0 }))}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff22" />
                                                 <XAxis dataKey="time" stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} />
                                                 <YAxis stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} width={45} />
                                                 <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#4ecdc4' }} />
-                                                <Line type="monotone" dataKey="alt" stroke="#4ecdc4" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                                <Line type="monotone" dataKey="altKm" stroke="#4ecdc4" strokeWidth={2} dot={false} isAnimationActive={false} />
                                             </LineChart>
                                         </ResponsiveContainer>
                                     </div>
@@ -732,7 +803,20 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         </button>
                         <div className="flex-1 flex items-center gap-4 px-4">
                             <span className="text-[12px] font-bold text-[#6b788e] w-16 text-right font-mono">{currentPoint?.time?.toFixed(2) || (timeIndex * 0.1).toFixed(2)}s</span>
-                            <input type="range" min="0" max={Math.max(0, data.length - 1)} value={timeIndex} onChange={handleSliderChange} disabled={data.length === 0} className="flex-1 h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#227d8d]" />
+                            <input
+                                type="range"
+                                min="0"
+                                max={Math.max(0, data.length - 1)}
+                                value={timeIndex}
+                                onChange={handleSliderChange}
+                                disabled={data.length === 0}
+                                className="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
+                                style={{
+                                    '--progress': '100%',
+                                    '--accent': '#227d8d',
+                                    backgroundColor: '#227d8d'
+                                } as React.CSSProperties}
+                            />
                             <span className="text-[12px] font-bold text-[#6b788e] w-16 font-mono">{data.length > 0 ? (data[data.length - 1].time?.toFixed(2) || ((data.length - 1) * 0.1).toFixed(2)) : '0.00'}s</span>
                         </div>
                     </>
@@ -814,7 +898,10 @@ function transformTrajectory(fileText: string, launch: { lat: number, lon: numbe
 
     // Time-based Sampling (every 0.5 seconds)
     const sampledData: TrajPoint[] = [];
-    let nextTargetTime = 0;
+
+    // First find the starting time
+    const minTime = parsedData.length > 0 && parsedData[0].time !== undefined ? parsedData[0].time : 0;
+    let nextTargetTime = minTime;
 
     for (const point of parsedData) {
         // Fallback to index if time is missing
@@ -824,7 +911,11 @@ function transformTrajectory(fileText: string, launch: { lat: number, lon: numbe
         }
 
         if (point.time >= nextTargetTime) {
-            sampledData.push(point);
+            // Normalize time to start at 0
+            sampledData.push({
+                ...point,
+                time: point.time - minTime
+            });
             nextTargetTime = point.time + 0.5;
         }
     }
