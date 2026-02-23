@@ -889,24 +889,35 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                         <div className="w-full h-full bg-[#144a54] relative flex flex-col justify-start rounded-xl border border-[#0d343b] shadow-sm overflow-hidden p-4">
                             <h3 className="text-white font-bold text-[16px] drop-shadow-md mb-3 uppercase tracking-wider">Mission Statistics</h3>
                             {selectedRun ? (
-                                <div className="grid grid-cols-2 gap-y-3 gap-x-2">
-                                    <div>
-                                        <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Apogee</p>
-                                        <p className="text-white text-[20px] font-mono leading-none">{selectedRun.apogeeAlt !== undefined ? selectedRun.apogeeAlt : '--'} km</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Burn Out</p>
-                                        <p className="text-white text-[20px] font-mono leading-none">{selectedRun.timeEndOfBurn !== undefined ? selectedRun.timeEndOfBurn : '--'} s</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Separation</p>
-                                        <p className="text-white text-[20px] font-mono leading-none">{selectedRun.separationTime !== undefined ? selectedRun.separationTime : '--'} s</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Time of Flight</p>
-                                        <p className="text-white text-[20px] font-mono leading-none">{selectedRun.timeOfFlight !== undefined ? selectedRun.timeOfFlight : '--'} s</p>
-                                    </div>
-                                </div>
+                                (() => {
+                                    const currentTime = currentPoint?.time || 0;
+                                    const apogeeEvent = eventTimes.find(e => e.name === 'Apogee');
+                                    const showApogee = apogeeEvent ? (currentTime >= apogeeEvent.time) : false;
+                                    const showBurnOut = selectedRun.timeEndOfBurn !== undefined ? (currentTime >= selectedRun.timeEndOfBurn) : false;
+                                    const showSeparation = selectedRun.separationTime !== undefined ? (currentTime >= selectedRun.separationTime) : false;
+                                    const showTOF = selectedRun.timeOfFlight !== undefined ? (currentTime >= selectedRun.timeOfFlight) : false;
+
+                                    return (
+                                        <div className="grid grid-cols-2 gap-y-3 gap-x-2">
+                                            <div>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Apogee</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{showApogee ? selectedRun.apogeeAlt : '--'} <span className="text-[12px] opacity-60">km</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Burn Out</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{showBurnOut ? selectedRun.timeEndOfBurn : '--'} <span className="text-[12px] opacity-60">s</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Separation</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{showSeparation ? selectedRun.separationTime : '--'} <span className="text-[12px] opacity-60">s</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Time of Flight</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{showTOF ? selectedRun.timeOfFlight : '--'} <span className="text-[12px] opacity-60">s</span></p>
+                                            </div>
+                                        </div>
+                                    );
+                                })()
                             ) : (
                                 <p className="text-white/60 italic text-sm">No performance run matched</p>
                             )}
@@ -963,9 +974,9 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                     </div>
                                 </div>
 
-                                {/* Graph 3: Theta (Pitch Angle) */}
+                                {/* Graph 3: Gamma Angle (Flight Path) */}
                                 <div className="flex-1 min-h-[80px] flex flex-col">
-                                    <h4 className="text-white/60 text-[10px] font-bold mb-1 uppercase tracking-wide">Pitch Angle (deg)</h4>
+                                    <h4 className="text-white/60 text-[10px] font-bold mb-1 uppercase tracking-wide">Gamma Angle (deg)</h4>
                                     <div className="flex-1 min-h-0">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <LineChart data={data.slice(0, timeIndex + 1)}>
@@ -973,7 +984,7 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                                 <XAxis dataKey="time" stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} tickFormatter={(v) => Number(v).toFixed(1)} />
                                                 <YAxis stroke="#ffffff44" tick={{ fill: '#ffffff88', fontSize: 10 }} width={35} />
                                                 <Tooltip contentStyle={{ backgroundColor: '#0d343b', borderColor: '#227d8d' }} itemStyle={{ color: '#A3E635' }} labelFormatter={(v) => `Time: ${Number(v).toFixed(1)} s`} />
-                                                <Line type="monotone" dataKey="theta" name="Theta" stroke="#A3E635" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                                <Line type="monotone" dataKey="gamma" name="Gamma" stroke="#A3E635" strokeWidth={2} dot={false} isAnimationActive={false} />
                                             </LineChart>
                                         </ResponsiveContainer>
                                     </div>
@@ -1160,7 +1171,7 @@ function transformTrajectory(fileText: string, launch: { lat: number, lon: numbe
         const vTotal = Math.sqrt(vx * vx + vy * vy + vz * vz);
 
         const vHorizontal = Math.sqrt(vx * vx + vy * vy);
-        const theta = (vHorizontal === 0 && vz === 0) ? 0 : Math.atan2(vz, vHorizontal) * (180 / Math.PI);
+        const gamma = (vHorizontal === 0 && vz === 0) ? 0 : Math.atan2(vz, vHorizontal) * (180 / Math.PI);
 
         return {
             ...pt,
@@ -1170,7 +1181,7 @@ function transformTrajectory(fileText: string, launch: { lat: number, lon: numbe
             altKm: altMeters / 1000,
             rangeKm,
             vTotal,
-            theta
+            gamma
         };
     });
 }
