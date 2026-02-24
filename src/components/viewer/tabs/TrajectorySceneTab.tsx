@@ -898,30 +898,41 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                     const showTOF = selectedRun.timeOfFlight !== undefined ? (currentTime >= selectedRun.timeOfFlight) : false;
 
                                     return (
-                                        <div className="grid grid-cols-3 gap-y-3 gap-x-2">
+                                        <div className="grid grid-cols-4 gap-y-3 gap-x-2">
+                                            {/* Row 1 */}
                                             <div>
-                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Apogee</p>
-                                                <p className="text-white text-[20px] font-mono leading-none">{showApogee ? selectedRun.apogeeAlt : '--'} <span className="text-[12px] opacity-60">km</span></p>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1" title="End of Burn Angle">EOB Angle</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{showBurnOut ? selectedRun.angleEndOfBurn : '--'} <span className="text-[12px] opacity-60">°</span></p>
                                             </div>
                                             <div>
-                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Burn Out</p>
-                                                <p className="text-white text-[20px] font-mono leading-none">{showBurnOut ? selectedRun.timeEndOfBurn : '--'} <span className="text-[12px] opacity-60">s</span></p>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1" title="End of Burn Velocity">EOB Vel</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{showBurnOut ? selectedRun.velEndOfBurn : '--'} <span className="text-[12px] opacity-60">m/s</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1" title="Live Total Velocity">Live Vel</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{currentPoint?.vTotal !== undefined ? currentPoint.vTotal.toFixed(0) : '--'} <span className="text-[12px] opacity-60">m/s</span></p>
                                             </div>
                                             <div>
                                                 <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Live Range</p>
                                                 <p className="text-white text-[20px] font-mono leading-none">{currentPoint?.rangeKm !== undefined ? currentPoint.rangeKm.toFixed(1) : '--'} <span className="text-[12px] opacity-60">km</span></p>
                                             </div>
+
+                                            {/* Row 2 */}
                                             <div>
-                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Separation</p>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1" title="Separation Time">Separation</p>
                                                 <p className="text-white text-[20px] font-mono leading-none">{showSeparation ? selectedRun.separationTime : '--'} <span className="text-[12px] opacity-60">s</span></p>
                                             </div>
                                             <div>
-                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Time of Flight</p>
-                                                <p className="text-white text-[20px] font-mono leading-none">{currentTime.toFixed(1)} <span className="text-[12px] opacity-60">s</span></p>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1" title="Apogee Altitude">Apogee Alt</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{showApogee ? selectedRun.apogeeAlt : '--'} <span className="text-[12px] opacity-60">km</span></p>
                                             </div>
                                             <div>
-                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1">Live Alt</p>
-                                                <p className="text-white text-[20px] font-mono leading-none">{currentPoint?.altKm !== undefined ? currentPoint.altKm.toFixed(1) : '--'} <span className="text-[12px] opacity-60">km</span></p>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1" title="Apogee Velocity">Apogee Vel</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{showApogee ? selectedRun.apogeeVel : '--'} <span className="text-[12px] opacity-60">m/s</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-1" title="Time of Flight">Time of Flight</p>
+                                                <p className="text-white text-[20px] font-mono leading-none">{currentTime.toFixed(1)} <span className="text-[12px] opacity-60">s</span></p>
                                             </div>
                                         </div>
                                     );
