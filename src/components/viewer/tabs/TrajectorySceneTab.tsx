@@ -252,8 +252,10 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                 );
 
                                 if (dist > maxRange) {
-                                    console.warn(`Target out of range! Distance: ${dist.toFixed(0)}km (Max: ${maxRange}km)`);
+                                    setError(`Target location is out of range! Distance: ${dist.toFixed(0)}km (Max allowed: ${maxRange}km). Please select a point inside the blue circle.`);
                                     return;
+                                } else {
+                                    setError(null);
                                 }
                             }
 
@@ -838,12 +840,16 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                                     <div className="flex gap-4">
                                         <div className="flex-1">
                                             <span className="text-[10px] uppercase text-slate-500 font-bold block mb-1">Range</span>
-                                            <span className="font-mono text-sm text-slate-700 font-bold">
+                                            <span className="font-mono text-sm font-bold">
                                                 {(() => {
                                                     const activeTarget = (clickStep === 1 && hoverPos) ? hoverPos : targetPos;
-                                                    if (!activeTarget) return '--- km';
+                                                    if (!activeTarget) return <span className="text-slate-700">--- km</span>;
                                                     const dist = calculateHaversineDistance(launchPos.lat, launchPos.lon, activeTarget.lat, activeTarget.lon);
-                                                    return `${(dist).toFixed(1)} km`;
+
+                                                    if (dist > maxRange) {
+                                                        return <span className="text-red-600 drop-shadow-sm">{dist.toFixed(1)} km (Out of Range)</span>;
+                                                    }
+                                                    return <span className="text-slate-700">{dist.toFixed(1)} km</span>;
                                                 })()}
                                             </span>
                                         </div>
@@ -862,20 +868,30 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
                             )}
 
                             <div className="pt-4 mt-2 shrink-0 border-t border-gray-100">
-                                <button
-                                    onClick={handleLaunch}
-                                    disabled={!launchPos || !targetPos || loading}
-                                    className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 transition-all font-bold tracking-wide shadow-sm
-                                        ${(!launchPos || !targetPos)
-                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                                            : loading
-                                                ? 'bg-[#144a54] text-white opacity-80 cursor-wait'
-                                                : 'bg-[#89bdd3] hover:bg-[#227d8d] hover:shadow text-white cursor-pointer active:scale-[0.98]'
-                                        }`}
-                                >
-                                    <Send className="w-5 h-5" />
-                                    Launch Trajectory
-                                </button>
+                                {(() => {
+                                    const dist = (launchPos && targetPos) ? calculateHaversineDistance(launchPos.lat, launchPos.lon, targetPos.lat, targetPos.lon) : 0;
+                                    const isOutOfRange = dist > maxRange;
+                                    const isDisabled = !launchPos || !targetPos || loading || isOutOfRange;
+
+                                    return (
+                                        <button
+                                            onClick={handleLaunch}
+                                            disabled={isDisabled}
+                                            className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 transition-all font-bold tracking-wide shadow-sm
+                                                ${(!launchPos || !targetPos)
+                                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                                                    : isOutOfRange
+                                                        ? 'bg-red-100 text-red-500 cursor-not-allowed border border-red-200'
+                                                        : loading
+                                                            ? 'bg-[#144a54] text-white opacity-80 cursor-wait'
+                                                            : 'bg-[#89bdd3] hover:bg-[#227d8d] hover:shadow text-white cursor-pointer active:scale-[0.98]'
+                                                }`}
+                                        >
+                                            <Send className="w-5 h-5" />
+                                            {isOutOfRange ? "Target Out of Range" : "Launch Trajectory"}
+                                        </button>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </div>
