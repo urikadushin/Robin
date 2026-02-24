@@ -634,11 +634,17 @@ export const TrajectorySceneTab: React.FC<TrajectorySceneTabProps> = ({ threat, 
         <div className="fixed inset-0 z-[200] flex flex-col bg-[#f5f6f7] font-sans">
             {/* Header / Nav */}
             <div className="h-16 bg-[#144a54] flex flex-shrink-0 items-center justify-between px-6 shadow-md z-20">
-                <div className="flex flex-col">
+                <div className="flex items-center gap-3">
                     <h2 className="text-white text-lg font-bold flex items-center gap-2">
                         <svg className="w-5 h-5 text-[#227d8d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         3D Trajectory Intel
                     </h2>
+                    {threat?.missile?.name && (
+                        <>
+                            <div className="w-px h-5 bg-[#227d8d]/50 mx-2"></div>
+                            <span className="text-white text-lg font-light tracking-wide">{threat.missile.name}</span>
+                        </>
+                    )}
                 </div>
                 <div className="flex items-center gap-4">
                     {stage === 'playback' && (
