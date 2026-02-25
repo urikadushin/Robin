@@ -3,7 +3,7 @@ import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, Stage, PerspectiveCamera, Environment, useProgress, Html } from '@react-three/drei';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import * as THREE from 'three';
-import { Box, Package, HelpCircle, AlertCircle, Flame } from 'lucide-react';
+import { Box, Package, HelpCircle, AlertCircle } from 'lucide-react';
 
 // Error Boundary for 3D Parts to prevent full app crash
 class PartErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, { hasError: boolean }> {
@@ -49,29 +49,6 @@ const MissilePart = ({ url, partName, opacity }: ModelProps) => {
     return <primitive object={clonedObj} />;
 };
 
-// Separate component so TextureLoader hook is always called (hooks can't be conditional)
-const MissilePartWithTexture = ({ url, thermalUrl, opacity }: ModelProps & { thermalUrl: string }) => {
-    const obj = useLoader(OBJLoader, url);
-    const texture = useLoader(THREE.TextureLoader, thermalUrl);
-    const clonedObj = useMemo(() => obj.clone(), [obj]);
-
-    useLayoutEffect(() => {
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        clonedObj.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                child.material = new THREE.MeshPhongMaterial({
-                    map: texture,
-                    transparent: true,
-                    opacity: opacity,
-                    shininess: 30,
-                });
-            }
-        });
-    }, [clonedObj, texture, opacity]);
-
-    return <primitive object={clonedObj} />;
-};
 
 const Loader = () => {
     const { progress } = useProgress();
@@ -95,10 +72,9 @@ const Loader = () => {
 interface ThreeDViewerProps {
     missileName: string;
     assets?: any[];
-    thermalImages?: any[];
 }
 
-export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName, assets = [], thermalImages = [] }) => {
+export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName, assets = [] }) => {
     const nameLower = missileName.toLowerCase();
 
     const parts = useMemo(() => {
@@ -144,20 +120,10 @@ export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName, assets 
     }, [missileName, nameLower, assets]);
 
     const [selectedPartId, setSelectedPartId] = useState<string>('UN');
-    const [thermalMode, setThermalMode] = useState(false);
 
     const visibleParts = useMemo(() => {
         return parts.filter(p => p.id === selectedPartId);
     }, [parts, selectedPartId]);
-
-    // Find thermal image for the currently selected part (match by part_name, fallback to first available)
-    const activeThermalUrl = useMemo(() => {
-        if (!thermalImages || thermalImages.length === 0) return null;
-        const match = thermalImages.find((img: any) => img.part_name === selectedPartId)
-            ?? thermalImages[0];
-        if (!match?.image_path) return null;
-        return `/api/data/Images/Thermal/${nameLower}/${match.image_path}`;
-    }, [thermalImages, selectedPartId, nameLower]);
 
     if (parts.length === 0) {
         return <div className="h-full flex items-center justify-center text-gray-400">No 3D Model available</div>;

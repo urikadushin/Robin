@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { Suspense, useMemo, useLayoutEffect } from 'react';
+import { Canvas, useLoader } from '@react-three/fiber';
+import { OrbitControls, Stage, PerspectiveCamera, useProgress, Html } from '@react-three/drei';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import * as THREE from 'three';
 import { FullMissileData } from '../../../../backend/src/models/FullMissileModel';
 
 interface HeatTabProps {
@@ -23,9 +27,61 @@ const translateDescription = (hebrew: string) => {
     return english;
 };
 
+// Resolves which OBJ file to load for a given part
+const getObjUrl = (partName: string, missileName: string, assets: any[]): string => {
+    const dbModel = assets?.find(img => img.image_type === '3dModel' && img.part_name === partName)
+        ?? assets?.find(img => img.image_type === '3dModel'); // fallback to any part
+    if (dbModel) return `http://localhost:3000/api/data/3DModel/${dbModel.image_path}`;
+    const nameLower = missileName.toLowerCase();
+    if (nameLower === 'bulava') return `http://localhost:3000/api/data/3DModel/Bulava_${partName}.obj`;
+    const isSingle = nameLower.includes('shahed') || nameLower.includes('aim') || nameLower.includes('hellfire');
+    if (isSingle) return `http://localhost:3000/api/data/3DModel/${nameLower}.obj`;
+    return `http://localhost:3000/api/data/3DModel/${nameLower}${partName}.obj`;
+};
+
+// 3D mesh with thermal image projected as texture
+const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: string }) => {
+    const obj = useLoader(OBJLoader, objUrl);
+    const texture = useLoader(THREE.TextureLoader, thermalUrl);
+    const clonedObj = useMemo(() => obj.clone(), [obj]);
+
+    useLayoutEffect(() => {
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        clonedObj.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.material = new THREE.MeshPhongMaterial({
+                    map: texture,
+                    transparent: false,
+                    shininess: 20,
+                });
+            }
+        });
+    }, [clonedObj, texture]);
+
+    return <primitive object={clonedObj} />;
+};
+
+const ThermalLoader = () => {
+    const { progress } = useProgress();
+    return (
+        <Html center>
+            <div className="flex flex-col items-center gap-2">
+                <div className="w-40 h-1 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-orange-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+                </div>
+                <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">
+                    Loading 3D: {progress.toFixed(0)}%
+                </span>
+            </div>
+        </Html>
+    );
+};
+
 const HeatTab: React.FC<HeatTabProps> = ({ threat }) => {
     const thermalImages = threat.images?.filter((img: any) => img.image_type === 'thermal') || [];
     const [selectedIdx, setSelectedIdx] = React.useState(0);
+    const [view, setView] = React.useState<'image' | '3d'>('image');
 
     if (thermalImages.length === 0) {
         return (
@@ -41,10 +97,12 @@ const HeatTab: React.FC<HeatTabProps> = ({ threat }) => {
     }
 
     const selectedImage = thermalImages[selectedIdx];
+    const thermalUrl = `/api/data/Images/Thermal/${(threat.missile.name || 'unknown').toLowerCase()}/${selectedImage.image_path}`;
+    const objUrl = getObjUrl(selectedImage.part_name, threat.missile.name || '', threat.images || []);
 
     return (
         <div className="flex gap-8 h-[750px] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Left Selection List (30%) */}
+            {/* Left Selection List */}
             <div className="w-[350px] flex flex-col gap-4 overflow-y-auto pr-4 custom-scrollbar">
                 <div className="pb-4 border-b border-slate-100">
                     <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-1">Signature Inventory</h3>
@@ -92,31 +150,68 @@ const HeatTab: React.FC<HeatTabProps> = ({ threat }) => {
                 </div>
             </div>
 
-            {/* Right Detailed Viewer (70%) */}
+            {/* Right Viewer */}
             <div className="flex-1 bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden flex flex-col relative shadow-sm">
-                <div className="flex-1 overflow-auto bg-slate-50 custom-scrollbar relative">
-                    <div className="min-h-full flex items-center justify-center p-8 bg-slate-50">
-                        <img
-                            key={selectedImage.image_path}
-                            src={`/api/data/Images/Thermal/${(threat.missile.name || 'unknown').toLowerCase()}/${selectedImage.image_path}`}
-                            alt="Thermal Scan"
-                            className="max-w-none animate-in zoom-in-95 duration-500 shadow-2xl"
-                            onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                            }}
-                        />
-                    </div>
 
-                    <div className="absolute top-6 left-6 flex items-center gap-3 z-10">
-                        <span className="px-3 py-1 bg-orange-600/90 backdrop-blur-md text-white text-[10px] uppercase font-bold tracking-wider rounded-full shadow-xl border border-white/20">
+                {/* View toggle header */}
+                <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white">
+                    <div className="flex items-center gap-3">
+                        <span className="px-2.5 py-1 bg-orange-600/90 text-white text-[10px] uppercase font-bold tracking-wider rounded-full">
                             High-Resolution Analysis
                         </span>
-                        <span className="px-3 py-1 bg-slate-700/80 backdrop-blur-md text-white text-[10px] font-bold rounded-full border border-slate-600/30 uppercase">
+                        <span className="px-2.5 py-1 bg-slate-700/80 text-white text-[10px] font-bold rounded-full uppercase">
                             {selectedImage.part_name} Component
                         </span>
                     </div>
+                    <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+                        <button
+                            onClick={() => setView('image')}
+                            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all duration-200
+                                ${view === 'image' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            Image
+                        </button>
+                        <button
+                            onClick={() => setView('3d')}
+                            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all duration-200
+                                ${view === '3d' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-orange-500'}`}
+                        >
+                            3D Model
+                        </button>
+                    </div>
                 </div>
+
+                {/* Image view */}
+                {view === 'image' && (
+                    <div className="flex-1 overflow-auto bg-slate-50 custom-scrollbar">
+                        <div className="min-h-full flex items-center justify-center p-8">
+                            <img
+                                key={selectedImage.image_path}
+                                src={thermalUrl}
+                                alt="Thermal Scan"
+                                className="max-w-none animate-in zoom-in-95 duration-500 shadow-2xl"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* 3D view with thermal texture */}
+                {view === '3d' && (
+                    <div className="flex-1 bg-gradient-to-b from-slate-50 to-white">
+                        <Canvas shadows dpr={[1, 2]}>
+                            <Suspense fallback={<ThermalLoader />}>
+                                <PerspectiveCamera makeDefault fov={35} position={[10, 10, 10]} />
+                                <Stage environment="city" intensity={0.6} adjustCamera>
+                                    <ThermalMesh objUrl={objUrl} thermalUrl={thermalUrl} />
+                                </Stage>
+                                <OrbitControls enableDamping dampingFactor={0.05} autoRotate autoRotateSpeed={0.5} />
+                            </Suspense>
+                        </Canvas>
+                    </div>
+                )}
             </div>
         </div>
     );
