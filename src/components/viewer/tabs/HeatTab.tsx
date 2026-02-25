@@ -74,10 +74,10 @@ const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: strin
         // Crop out the MATLAB axis margins so only the colour data region is used.
         // Typical MATLAB figure: ~13% left margin (y-axis labels), ~12% bottom (x-axis labels),
         // ~4% right margin, ~4% top margin.
-        const cropLeft   = 0.13;
-        const cropBottom = 0.12;
-        const cropRight  = 0.04;
-        const cropTop    = 0.04;
+        const cropLeft   = 0.16;
+        const cropBottom = 0.15;
+        const cropRight  = 0.08;
+        const cropTop    = 0.08;
         texture.wrapS  = THREE.ClampToEdgeWrapping;
         texture.wrapT  = THREE.ClampToEdgeWrapping;
         texture.offset.set(cropLeft, cropBottom);
