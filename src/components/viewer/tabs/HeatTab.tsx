@@ -39,23 +39,70 @@ const getObjUrl = (partName: string, missileName: string, assets: any[]): string
     return `http://localhost:3000/api/data/3DModel/${nameLower}${partName}.obj`;
 };
 
-// 3D mesh with thermal image projected as texture
+// 3D mesh with thermal image projected as a cylindrical UV map.
+// The thermal images are Roll [0-360°] vs Aspect [0-180°] contour plots,
+// which maps directly onto a missile surface:
+//   U = position along the missile's long axis  (nose=0 → tail=1)  → Aspect
+//   V = angle around the missile's long axis    (0-360° → 0-1)     → Roll
 const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: string }) => {
     const obj = useLoader(OBJLoader, objUrl);
     const texture = useLoader(THREE.TextureLoader, thermalUrl);
     const clonedObj = useMemo(() => obj.clone(), [obj]);
 
     useLayoutEffect(() => {
+        // Step 1: scan all vertex positions to build a bounding box in mesh-local space
+        const bbox = new THREE.Box3();
+        clonedObj.traverse((child) => {
+            if (!(child instanceof THREE.Mesh)) return;
+            const pos = child.geometry.attributes.position;
+            const v = new THREE.Vector3();
+            for (let i = 0; i < pos.count; i++) {
+                v.fromBufferAttribute(pos, i);
+                bbox.expandByPoint(v);
+            }
+        });
+
+        const size = new THREE.Vector3();
+        bbox.getSize(size);
+
+        // Step 2: identify the missile's long axis (the largest dimension)
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const longAxis: 'x' | 'y' | 'z' =
+            size.x === maxDim ? 'x' : size.y === maxDim ? 'y' : 'z';
+        const axisMin = bbox.min[longAxis];
+
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
+
+        // Step 3: recompute UV coordinates as a cylindrical projection
         clonedObj.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                child.material = new THREE.MeshPhongMaterial({
-                    map: texture,
-                    transparent: false,
-                    shininess: 20,
-                });
+            if (!(child instanceof THREE.Mesh)) return;
+            const pos = child.geometry.attributes.position;
+            const uvArray = new Float32Array(pos.count * 2);
+
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                const z = pos.getZ(i);
+
+                // U = normalized position along long axis → maps to Aspect angle
+                const axisPos = longAxis === 'x' ? x : longAxis === 'y' ? y : z;
+                const u = (axisPos - axisMin) / maxDim;
+
+                // V = angle around long axis → maps to Roll angle
+                const a = longAxis === 'x' ? y : x;
+                const b = longAxis === 'x' ? z : longAxis === 'y' ? z : y;
+                const vCoord = (Math.atan2(b, a) + Math.PI) / (2 * Math.PI);
+
+                uvArray[i * 2]     = u;
+                uvArray[i * 2 + 1] = vCoord;
             }
+
+            child.geometry.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2));
+            child.material = new THREE.MeshPhongMaterial({
+                map: texture,
+                shininess: 20,
+            });
         });
     }, [clonedObj, texture]);
 
