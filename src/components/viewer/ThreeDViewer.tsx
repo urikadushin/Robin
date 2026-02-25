@@ -153,19 +153,6 @@ export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName, assets 
                     ))}
                 </div>
 
-                {/* Thermal texture toggle — only shown when a thermal image is available */}
-                {activeThermalUrl && (
-                    <button
-                        onClick={() => setThermalMode(v => !v)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all duration-200 shadow-sm
-                            ${thermalMode
-                                ? 'bg-orange-500 text-white border-orange-400 shadow-orange-200'
-                                : 'bg-white/80 text-orange-500 border-orange-200 hover:bg-orange-50'}`}
-                    >
-                        <Flame className="w-3 h-3" />
-                        {thermalMode ? 'Thermal ON' : 'Thermal'}
-                    </button>
-                )}
             </div>
 
             <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -183,20 +170,11 @@ export const ThreeDViewer: React.FC<ThreeDViewerProps> = ({ missileName, assets 
                                 {visibleParts.map((p) => (
                                     <PartErrorBoundary key={p.id} fallback={null}>
                                         <Suspense fallback={null}>
-                                            {thermalMode && activeThermalUrl ? (
-                                                <MissilePartWithTexture
-                                                    url={p.url}
-                                                    partName={p.id}
-                                                    opacity={1.0}
-                                                    thermalUrl={activeThermalUrl}
-                                                />
-                                            ) : (
-                                                <MissilePart
-                                                    url={p.url}
-                                                    partName={p.id}
-                                                    opacity={1.0}
-                                                />
-                                            )}
+                                            <MissilePart
+                                                url={p.url}
+                                                partName={p.id}
+                                                opacity={1.0}
+                                            />
                                         </Suspense>
                                     </PartErrorBoundary>
                                 ))}
