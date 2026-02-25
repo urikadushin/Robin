@@ -93,9 +93,9 @@ const HeatTab: React.FC<HeatTabProps> = ({ threat }) => {
             </div>
 
             {/* Right Detailed Viewer (70%) */}
-            <div className="flex-1 bg-slate-900 rounded-2xl border border-slate-200 overflow-hidden flex flex-col relative shadow-sm">
-                <div className="flex-1 overflow-auto bg-slate-900 custom-scrollbar relative">
-                    <div className="min-h-full flex items-center justify-center p-8 bg-slate-900">
+            <div className="flex-1 bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden flex flex-col relative shadow-sm">
+                <div className="flex-1 overflow-auto bg-slate-50 custom-scrollbar relative">
+                    <div className="min-h-full flex items-center justify-center p-8 bg-slate-50">
                         <img
                             key={selectedImage.image_path}
                             src={`/api/data/Images/Thermal/${(threat.missile.name || 'unknown').toLowerCase()}/${selectedImage.image_path}`}
@@ -112,7 +112,7 @@ const HeatTab: React.FC<HeatTabProps> = ({ threat }) => {
                         <span className="px-3 py-1 bg-orange-600/90 backdrop-blur-md text-white text-[10px] uppercase font-bold tracking-wider rounded-full shadow-xl border border-white/20">
                             High-Resolution Analysis
                         </span>
-                        <span className="px-3 py-1 bg-black/60 backdrop-blur-md text-white/90 text-[10px] font-bold rounded-full border border-white/10 uppercase">
+                        <span className="px-3 py-1 bg-slate-700/80 backdrop-blur-md text-white text-[10px] font-bold rounded-full border border-slate-600/30 uppercase">
                             {selectedImage.part_name} Component
                         </span>
                     </div>
