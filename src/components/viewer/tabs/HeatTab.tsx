@@ -44,7 +44,7 @@ const getObjUrl = (partName: string, missileName: string, assets: any[]): string
 // Margins (axis labels, tick marks) are auto-detected and cropped via pixel scanning.
 //   U = position along the missile's long axis  (nose=0 → tail=1)  → Aspect
 //   V = angle around the missile's long axis    (0-360° → 0-1)     → Roll
-const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: string }) => {
+const ThermalMesh = ({ objUrl, thermalUrl, onDataCropped }: { objUrl: string; thermalUrl: string, onDataCropped?: (url: string) => void }) => {
     const obj = useLoader(OBJLoader, objUrl);
     const texture = useLoader(THREE.TextureLoader, thermalUrl);
     const clonedObj = useMemo(() => obj.clone(), [obj]);
@@ -68,38 +68,94 @@ const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: strin
             return Math.max(r, g, b) - Math.min(r, g, b) > 40; // High contrast for Jet colormap
         };
 
-        // Scan OUTWARDS from the center. This avoids colorbars on the edges.
+        // Multi-sample colorful check: A row/column is "data" if ANY of its sampled pixels are colorful.
+        // This makes it robust against gaps in specific zones or labels crossing the scanline.
+        const checkRow = (py: number): boolean => {
+            // Sample at 25%, 50%, 75% of width
+            const samples = [0.25, 0.5, 0.75];
+            return samples.some(s => isColorful(Math.floor(tmpCanvas.width * s), py));
+        };
+        const checkCol = (px: number): boolean => {
+            // Sample at 25%, 50%, 75% of height
+            const samples = [0.25, 0.5, 0.75];
+            return samples.some(s => isColorful(px, Math.floor(tmpCanvas.height * s)));
+        };
+
+        // Scan OUTWARDS from the center to find the true data boundaries
         const midY = Math.floor(tmpCanvas.height / 2);
         const midX = Math.floor(tmpCanvas.width / 2);
+        const MAX_GAP = 30; // Increased gap tolerance for safety
 
         let dataLeft = midX;
-        while (dataLeft > 0 && isColorful(dataLeft, midY)) dataLeft--;
-        dataLeft++; // step back into the plot
+        let gapLeft = 0;
+        while (dataLeft > 0) {
+            if (checkCol(dataLeft)) gapLeft = 0;
+            else gapLeft++;
+            if (gapLeft > MAX_GAP) break;
+            dataLeft--;
+        }
+        dataLeft += gapLeft;
 
         let dataRight = midX;
-        while (dataRight < tmpCanvas.width - 1 && isColorful(dataRight, midY)) dataRight++;
-        dataRight--;
+        let gapRight = 0;
+        while (dataRight < tmpCanvas.width - 1) {
+            if (checkCol(dataRight)) gapRight = 0;
+            else gapRight++;
+            if (gapRight > MAX_GAP) break;
+            dataRight++;
+        }
+        dataRight -= gapRight;
 
         let dataTop = midY;
-        while (dataTop > 0 && isColorful(midX, dataTop)) dataTop--;
-        dataTop++;
+        let gapTop = 0;
+        while (dataTop > 0) {
+            if (checkRow(dataTop)) gapTop = 0;
+            else gapTop++;
+            if (gapTop > MAX_GAP) break;
+            dataTop--;
+        }
+        dataTop += gapTop;
 
         let dataBottom = midY;
-        while (dataBottom < tmpCanvas.height - 1 && isColorful(midX, dataBottom)) dataBottom++;
-        dataBottom--;
+        let gapBottom = 0;
+        while (dataBottom < tmpCanvas.height - 1) {
+            if (checkRow(dataBottom)) gapBottom = 0;
+            else gapBottom++;
+            if (gapBottom > MAX_GAP) break;
+            dataBottom++;
+        }
+        dataBottom -= gapBottom;
 
         // === Step 2: Create a pixel-precise cropped CanvasTexture ===
-        const dw = dataRight - dataLeft + 1;
-        const dh = dataBottom - dataTop + 1;
+        const dw = Math.max(1, dataRight - dataLeft + 1);
+        const dh = Math.max(1, dataBottom - dataTop + 1);
+
+        // Safety: If for some reason the crop is physically impossible or finds nothing,
+        // fallback to the full uncropped image to prevent a React component crash.
         const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = dw;
-        cropCanvas.height = dh;
-        cropCanvas.getContext('2d')!.drawImage(
-            img, dataLeft, dataTop, dw, dh, 0, 0, dw, dh
-        );
+        if (dw <= 1 || dh <= 1 || dataLeft >= tmpCanvas.width || dataTop >= tmpCanvas.height) {
+            console.warn('HeatTab: Auto-crop detected invalid bounds, falling back to full texture.');
+            cropCanvas.width = img.width;
+            cropCanvas.height = img.height;
+            cropCanvas.getContext('2d')!.drawImage(img, 0, 0);
+        } else {
+            cropCanvas.width = dw;
+            cropCanvas.height = dh;
+            cropCanvas.getContext('2d')!.drawImage(
+                img, dataLeft, dataTop, dw, dh, 0, 0, dw, dh
+            );
+        }
+
+        // Bubbling up the cropped image URL so the visual dashboard can use it too (larger view)
+        if (onDataCropped) {
+            onDataCropped(cropCanvas.toDataURL());
+        }
+
         const croppedTexture = new THREE.CanvasTexture(cropCanvas);
         croppedTexture.wrapS = THREE.ClampToEdgeWrapping;
         croppedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        croppedTexture.colorSpace = THREE.SRGBColorSpace;
+        croppedTexture.needsUpdate = true;
 
         // === Step 3: Compute bounding box to find missile long axis ===
         const bbox = new THREE.Box3();
@@ -175,6 +231,12 @@ const HeatTab: React.FC<HeatTabProps> = ({ threat }) => {
     const thermalImages = threat.images?.filter((img: any) => img.image_type === 'thermal') || [];
     const [selectedIdx, setSelectedIdx] = React.useState(0);
     const [view, setView] = React.useState<'image' | '3d'>('image');
+    const [croppedImageUrl, setCroppedImageUrl] = React.useState<string | null>(null);
+
+    // Reset crop when image changes
+    React.useEffect(() => {
+        setCroppedImageUrl(null);
+    }, [selectedIdx]);
 
     if (thermalImages.length === 0) {
         return (
@@ -244,7 +306,17 @@ const HeatTab: React.FC<HeatTabProps> = ({ threat }) => {
             </div>
 
             {/* Right Viewer */}
-            <div className="flex-1 bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden flex flex-col relative shadow-sm">
+            <div className="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative group">
+                {/* Render ThermalMesh in the background even in image mode to trigger the auto-crop logic once */}
+                <div className="hidden">
+                    <Canvas>
+                        <ThermalMesh
+                            objUrl={objUrl}
+                            thermalUrl={thermalUrl}
+                            onDataCropped={setCroppedImageUrl} // Pass setCroppedImageUrl
+                        />
+                    </Canvas>
+                </div>
 
                 {/* View toggle header */}
                 <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white">
@@ -276,32 +348,41 @@ const HeatTab: React.FC<HeatTabProps> = ({ threat }) => {
 
                 {/* Image view */}
                 {view === 'image' && (
-                    <div className="flex-1 overflow-auto bg-slate-50 custom-scrollbar">
-                        <div className="min-h-full flex items-center justify-center p-8">
+                    <div className="flex-1 bg-slate-50 relative overflow-hidden">
+                        <div className="absolute inset-0 flex items-center justify-center p-1">
                             <img
                                 key={selectedImage.image_path}
-                                src={thermalUrl}
+                                src={croppedImageUrl || thermalUrl} // Use croppedImageUrl when available
                                 alt="Thermal Scan"
-                                className="max-w-none animate-in zoom-in-95 duration-500 shadow-2xl"
+                                className={`animate-in zoom-in-95 duration-500 shadow-2xl transition-all
+                                    ${croppedImageUrl ? 'w-full h-full object-contain' : 'max-w-[90%] max-h-[90%] object-contain opacity-50'}`}
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                 }}
                             />
+                            {!croppedImageUrl && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="w-8 h-8 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Optimizing View...</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
 
-                {/* 3D view with thermal texture */}
+                {/* 3D view */}
                 {view === '3d' && (
-                    <div className="flex-1 bg-gradient-to-b from-slate-50 to-white">
+                    <div className="flex-1 relative bg-slate-900 overflow-hidden">
                         <Canvas shadows dpr={[1, 2]}>
+                            <PerspectiveCamera makeDefault position={[0, 0, 20]} fov={35} />
                             <Suspense fallback={<ThermalLoader />}>
-                                <PerspectiveCamera makeDefault fov={35} position={[10, 10, 10]} />
-                                <Stage environment="city" intensity={0.6} adjustCamera>
+                                <Stage environment="city" intensity={0.6} shadows="contact">
                                     <ThermalMesh objUrl={objUrl} thermalUrl={thermalUrl} />
                                 </Stage>
-                                <OrbitControls enableDamping dampingFactor={0.05} autoRotate autoRotateSpeed={0.5} />
                             </Suspense>
+                            <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI / 1.75} />
                         </Canvas>
                     </div>
                 )}
