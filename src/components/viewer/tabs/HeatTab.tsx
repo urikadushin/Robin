@@ -71,8 +71,18 @@ const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: strin
             size.x === maxDim ? 'x' : size.y === maxDim ? 'y' : 'z';
         const axisMin = bbox.min[longAxis];
 
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
+        // Crop out the MATLAB axis margins so only the colour data region is used.
+        // Typical MATLAB figure: ~13% left margin (y-axis labels), ~12% bottom (x-axis labels),
+        // ~4% right margin, ~4% top margin.
+        const cropLeft   = 0.13;
+        const cropBottom = 0.12;
+        const cropRight  = 0.04;
+        const cropTop    = 0.04;
+        texture.wrapS  = THREE.ClampToEdgeWrapping;
+        texture.wrapT  = THREE.ClampToEdgeWrapping;
+        texture.offset.set(cropLeft, cropBottom);
+        texture.repeat.set(1 - cropLeft - cropRight, 1 - cropBottom - cropTop);
+        texture.needsUpdate = true;
 
         // Step 3: recompute UV coordinates as a cylindrical projection
         clonedObj.traverse((child) => {
@@ -99,10 +109,8 @@ const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: strin
             }
 
             child.geometry.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2));
-            child.material = new THREE.MeshPhongMaterial({
-                map: texture,
-                shininess: 20,
-            });
+            // MeshBasicMaterial ignores scene lighting → shows raw thermal colours
+            child.material = new THREE.MeshBasicMaterial({ map: texture });
         });
     }, [clonedObj, texture]);
 
