@@ -40,8 +40,8 @@ const getObjUrl = (partName: string, missileName: string, assets: any[]): string
 };
 
 // 3D mesh with thermal image projected as a cylindrical UV map.
-// The thermal images are Roll [0-360°] vs Aspect [0-180°] contour plots,
-// which maps directly onto a missile surface:
+// The thermal images are Roll [0-360°] vs Aspect [0-180°] MATLAB contour plots.
+// Margins (axis labels, tick marks) are auto-detected and cropped via pixel scanning.
 //   U = position along the missile's long axis  (nose=0 → tail=1)  → Aspect
 //   V = angle around the missile's long axis    (0-360° → 0-1)     → Roll
 const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: string }) => {
@@ -50,7 +50,58 @@ const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: strin
     const clonedObj = useMemo(() => obj.clone(), [obj]);
 
     useLayoutEffect(() => {
-        // Step 1: scan all vertex positions to build a bounding box in mesh-local space
+        // === Step 1: Auto-detect the color-data region in the MATLAB figure ===
+        // Thermal data uses the jet colormap (always colorful).
+        // Margins are white (axis bg) or black (labels/ticks) — both grayscale.
+        const img = texture.image as HTMLImageElement;
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = img.width;
+        tmpCanvas.height = img.height;
+        const tmpCtx = tmpCanvas.getContext('2d')!;
+        tmpCtx.drawImage(img, 0, 0);
+        const pixels = tmpCtx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height).data;
+
+        // Smarter isColorful check: ignore white borders, black labels, and gray tones
+        const isColorful = (px: number, py: number): boolean => {
+            const idx = (py * tmpCanvas.width + px) * 4;
+            const r = pixels[idx], g = pixels[idx + 1], b = pixels[idx + 2];
+            return Math.max(r, g, b) - Math.min(r, g, b) > 40; // High contrast for Jet colormap
+        };
+
+        // Scan OUTWARDS from the center. This avoids colorbars on the edges.
+        const midY = Math.floor(tmpCanvas.height / 2);
+        const midX = Math.floor(tmpCanvas.width / 2);
+
+        let dataLeft = midX;
+        while (dataLeft > 0 && isColorful(dataLeft, midY)) dataLeft--;
+        dataLeft++; // step back into the plot
+
+        let dataRight = midX;
+        while (dataRight < tmpCanvas.width - 1 && isColorful(dataRight, midY)) dataRight++;
+        dataRight--;
+
+        let dataTop = midY;
+        while (dataTop > 0 && isColorful(midX, dataTop)) dataTop--;
+        dataTop++;
+
+        let dataBottom = midY;
+        while (dataBottom < tmpCanvas.height - 1 && isColorful(midX, dataBottom)) dataBottom++;
+        dataBottom--;
+
+        // === Step 2: Create a pixel-precise cropped CanvasTexture ===
+        const dw = dataRight - dataLeft + 1;
+        const dh = dataBottom - dataTop + 1;
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = dw;
+        cropCanvas.height = dh;
+        cropCanvas.getContext('2d')!.drawImage(
+            img, dataLeft, dataTop, dw, dh, 0, 0, dw, dh
+        );
+        const croppedTexture = new THREE.CanvasTexture(cropCanvas);
+        croppedTexture.wrapS = THREE.ClampToEdgeWrapping;
+        croppedTexture.wrapT = THREE.ClampToEdgeWrapping;
+
+        // === Step 3: Compute bounding box to find missile long axis ===
         const bbox = new THREE.Box3();
         clonedObj.traverse((child) => {
             if (!(child instanceof THREE.Mesh)) return;
@@ -64,27 +115,12 @@ const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: strin
 
         const size = new THREE.Vector3();
         bbox.getSize(size);
-
-        // Step 2: identify the missile's long axis (the largest dimension)
         const maxDim = Math.max(size.x, size.y, size.z);
         const longAxis: 'x' | 'y' | 'z' =
             size.x === maxDim ? 'x' : size.y === maxDim ? 'y' : 'z';
         const axisMin = bbox.min[longAxis];
 
-        // Crop out the MATLAB axis margins so only the colour data region is used.
-        // Typical MATLAB figure: ~13% left margin (y-axis labels), ~12% bottom (x-axis labels),
-        // ~4% right margin, ~4% top margin.
-        const cropLeft   = 0.16;
-        const cropBottom = 0.15;
-        const cropRight  = 0.08;
-        const cropTop    = 0.08;
-        texture.wrapS  = THREE.ClampToEdgeWrapping;
-        texture.wrapT  = THREE.ClampToEdgeWrapping;
-        texture.offset.set(cropLeft, cropBottom);
-        texture.repeat.set(1 - cropLeft - cropRight, 1 - cropBottom - cropTop);
-        texture.needsUpdate = true;
-
-        // Step 3: recompute UV coordinates as a cylindrical projection
+        // === Step 4: Apply cylindrical UV projection + cropped texture ===
         clonedObj.traverse((child) => {
             if (!(child instanceof THREE.Mesh)) return;
             const pos = child.geometry.attributes.position;
@@ -95,22 +131,24 @@ const ThermalMesh = ({ objUrl, thermalUrl }: { objUrl: string; thermalUrl: strin
                 const y = pos.getY(i);
                 const z = pos.getZ(i);
 
-                // U = normalized position along long axis → maps to Aspect angle
+                // U = inverted position along long axis (nose=0, tail=1) → Aspect
                 const axisPos = longAxis === 'x' ? x : longAxis === 'y' ? y : z;
-                const u = (axisPos - axisMin) / maxDim;
+                const u = 1.0 - (axisPos - axisMin) / maxDim;
 
-                // V = angle around long axis → maps to Roll angle
+                // V = angle around long axis → Roll
                 const a = longAxis === 'x' ? y : x;
                 const b = longAxis === 'x' ? z : longAxis === 'y' ? z : y;
                 const vCoord = (Math.atan2(b, a) + Math.PI) / (2 * Math.PI);
 
-                uvArray[i * 2]     = u;
-                uvArray[i * 2 + 1] = vCoord;
+                // U = normalized position along long axis → maps to Aspect angle
+                // V = angle around long axis → maps to Roll angle
+                uvArray[i * 2] = u;      // S (X-axis) = Aspect (Length)
+                uvArray[i * 2 + 1] = vCoord; // T (Y-axis) = Roll (Circumference)
+
             }
 
             child.geometry.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2));
-            // MeshBasicMaterial ignores scene lighting → shows raw thermal colours
-            child.material = new THREE.MeshBasicMaterial({ map: texture });
+            child.material = new THREE.MeshBasicMaterial({ map: croppedTexture });
         });
     }, [clonedObj, texture]);
 
