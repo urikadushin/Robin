@@ -109,7 +109,7 @@ export const ThreatViewer: React.FC<ThreatViewerProps> = ({ threat, onClose, onE
                     <div className="flex-1 overflow-y-auto px-10 py-8 custom-scrollbar relative z-10 bg-white">
                         <div className="max-w-[1400px] mx-auto h-full flex flex-col">
                             {activeTab === 'general' && <GeneralTab threat={threat} layout="data" tab={activeTab} />}
-                            {activeTab === 'structural' && <ThreeDViewer missileName={threat.missile.name} assets={threat.images} />}
+                            {activeTab === 'structural' && <ThreeDViewer missileName={threat.missile.name} assets={threat.images} thermalImages={threat.images?.filter((img: any) => img.image_type === 'thermal')} />}
                             {activeTab === 'tech' && <TechTab threat={threat} />}
                             {activeTab === 'motor' && <MotorTab threat={threat} />}
                             {activeTab === 'rcs' && <RcsTab threat={threat} />}
